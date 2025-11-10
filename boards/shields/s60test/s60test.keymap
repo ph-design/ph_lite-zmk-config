@@ -53,7 +53,7 @@
             display-name = "Function";
             bindings = <
 &kp GRAVE &kp F1    &kp F2    &kp F3          &kp F4    &kp F5    &kp F6    &kp F7    &kp F8    &kp F9    &kp F10   &kp F11   &kp F12       &kp DEL
-&trans    &trans    &trans    &trans          &sys_reset  &trans  &trans    &trans    &trans    &trans    &kp PSCRN &kp HOME  &kp END       &trans
+&trans    &trans    &trans    &trans          &sys_reset  &trans  &trans    &trans    &trans    &trans    &kp PSCRN &kp HOME  &kp END       &studio_unlock
 &trans    &trans    &trans    &trans          &trans      &trans  &kp LEFT  &kp DOWN  &kp UP    &kp RIGHT &kp PG_UP &kp PG_DN               &trans
 &trans              &trans    &trans          &trans      &trans  &mo 2     &trans    &trans    &trans    &trans    &trans                  &trans
 &trans    &trans    &trans                              &trans                                  &trans    &trans    &trans                  &trans
