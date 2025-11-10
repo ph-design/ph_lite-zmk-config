@@ -1,0 +1,12 @@
+file_format: "1"
+id: s60test
+name: s60test
+type: shield
+url: https://github.com/ph-design/zmk-config
+requires: [ph_lite]
+exposes: []
+features:
+  - keys
+  - studio
+siblings:
+  - s60test

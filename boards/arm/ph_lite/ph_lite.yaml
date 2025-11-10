@@ -1,0 +1,14 @@
+identifier: ph_lite
+name: PH-Lite
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - usb_device
+  - ble
+  - pwm
+  - watchdog

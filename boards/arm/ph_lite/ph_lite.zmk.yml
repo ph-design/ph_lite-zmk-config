@@ -1,0 +1,9 @@
+file_format: "1"
+id: ph_lite
+name: PH-Lite
+type: board
+arch: arm
+outputs:
+  - usb
+  - ble
+url: https://github.com/ph-design/ph-lite_zmk

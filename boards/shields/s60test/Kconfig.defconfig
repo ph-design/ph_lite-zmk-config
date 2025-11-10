@@ -1,0 +1,6 @@
+if SHIELD_S60TEST
+
+config ZMK_KEYBOARD_NAME
+    default "s60test"
+
+endif

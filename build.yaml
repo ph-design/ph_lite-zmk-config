@@ -18,3 +18,8 @@
 #     artifact-name: corne_left_with_studio
 #
 ---
+include:
+  - board: ph_lite
+    shield: s60test
+    snippet: studio-rpc-usb-uart
+    cmake-args: -DCONFIG_ZMK_STUDIO=y

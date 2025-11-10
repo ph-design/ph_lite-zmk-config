@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Team PHDesign
+# SPDX-License-Identifier: MIT
+
+if BOARD_PH_LITE
+
+config BOARD
+    default "ph_lite"
+
+if USB_DEVICE_STACK
+
+config USB_NRFX
+    default y
+
+endif # USB_DEVICE_STACK
+
+config BT_CTLR
+    default BT
+
+endif # BOARD_PH_LITE
