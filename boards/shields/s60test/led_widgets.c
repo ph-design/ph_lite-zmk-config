@@ -220,6 +220,15 @@ static int led_widgets_init(void) {
         return -ENODEV;
     }
     
+    // Test LED on startup - blink 3 times
+    LOG_INF("Testing LED...");
+    for (int i = 0; i < 3; i++) {
+        led_set_brightness(leds, 0, 100);
+        k_sleep(K_MSEC(200));
+        led_set_brightness(leds, 0, 0);
+        k_sleep(K_MSEC(200));
+    }
+    
     for (uint8_t i = 0; i < LED_EVENT_SIZE; i++) {
         active_widgets_ind[i] = -1;
         last_widgets_ind[i] = -1;
