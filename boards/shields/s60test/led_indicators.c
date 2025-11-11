@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <zmk/led_widgets.h>
+#include "led_widgets.h"
 
 /*
  * LED Indicator Effects Definition

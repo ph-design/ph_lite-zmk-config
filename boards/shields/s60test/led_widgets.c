@@ -12,7 +12,7 @@
 #include <zmk/events/battery_state_changed.h>
 #include <zmk/events/ble_active_profile_changed.h>
 #include <zmk/ble.h>
-#include <zmk/led_widgets.h>
+#include "led_widgets.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
@@ -23,7 +23,7 @@ extern const led_widget_t led_widgets[LED_EVENT_SIZE][CONFIG_ZMK_LED_WIDGETS_MAX
 #define PAUSE_TIMEOUT_MS 100
 #define LED_ACTIVE_WIDGET_GET(i) (led_widgets[i][active_widgets_ind[i]])
 
-// 工作队列和状态
+// Work queue and state
 static void led_widget_work_cb(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(led_widget_work, led_widget_work_cb);
 static led_state_t state = LED_STATE_IDLE;
@@ -34,19 +34,19 @@ static uint8_t led_cmd_ind = 0;
 static struct k_timer loop_timers[LED_EVENT_SIZE];
 static bool loop_timer_started[LED_EVENT_SIZE];
 
-// 检查是否为状态 widget（只有一个命令且无延迟）
+// Check if widget is a status widget (single command with no delay)
 static bool widget_is_status(const led_widget_t *widget) {
     return widget->cmd_len == 1 && widget->commands[0].timeout == 0;
 }
 
-// 关闭所有 LED
+// Turn off all LEDs
 static void led_off_all(void) {
     for (uint8_t i = 0; i < NUM_LEDS; i++) {
         led_off(leds, i);
     }
 }
 
-// 执行 widget 命令
+// Execute widget command
 static void run_widget_cmd(const led_event_type_t ev, const uint8_t cmd_ind) {
     const led_widget_t *active_widget = &LED_ACTIVE_WIDGET_GET(ev);
     const uint8_t cmd_len = active_widget->cmd_len;
@@ -67,19 +67,19 @@ static void run_widget_cmd(const led_event_type_t ev, const uint8_t cmd_ind) {
         }
     }
     
-    // 设置 LED 亮度
+    // Set LED brightness
     for (uint8_t i = 0; i < NUM_LEDS; i++) {
         led_set_brightness(leds, i, cmd->brightness[i]);
     }
     
-    // 安排下一个命令
+    // Schedule next command
     if (cmd->timeout > 0) {
         k_work_schedule(&led_widget_work, K_MSEC(cmd->timeout));
     }
     
     active_widget_type = ev;
     
-    // 检查是否完成
+    // Check if finished
     if (cmd_len == cmd_ind + 1) {
         state = LED_STATE_IDLE;
         return;
@@ -89,7 +89,7 @@ static void run_widget_cmd(const led_event_type_t ev, const uint8_t cmd_ind) {
     led_cmd_ind = cmd_ind;
 }
 
-// 暂停当前 widget
+// Pause current widget
 static void led_widget_pause(void) {
     LOG_DBG("-> pause");
     led_off_all();
@@ -97,7 +97,7 @@ static void led_widget_pause(void) {
     k_work_schedule(&led_widget_work, K_MSEC(PAUSE_TIMEOUT_MS));
 }
 
-// 工作队列回调
+// Work queue callback
 static void led_widget_work_cb(struct k_work *_work) {
     switch (state) {
     case LED_STATE_IDLE:
@@ -109,7 +109,7 @@ static void led_widget_work_cb(struct k_work *_work) {
         }
         active_widget_type = -1;
         
-        // 找到优先级最高的 widget
+        // Find widget with highest priority
         uint8_t max_priority = 0;
         for (uint8_t i = 0; i < LED_EVENT_SIZE; i++) {
             if (active_widgets_ind[i] != -1 && LED_ACTIVE_WIDGET_GET(i).priority > max_priority) {
@@ -137,11 +137,11 @@ static void led_widget_work_cb(struct k_work *_work) {
     }
 }
 
-// 调度 widget
+// Schedule widget
 static void led_widget_schedule(const led_event_type_t ev, const uint8_t widget) {
     LOG_DBG("schedule: event=%u widget=%u", ev, widget);
     
-    // 如果是相同的状态 widget，跳过
+    // Skip if same status widget
     if (active_widgets_ind[ev] == widget && widget_is_status(&LED_ACTIVE_WIDGET_GET(ev))) {
         return;
     }
@@ -149,13 +149,13 @@ static void led_widget_schedule(const led_event_type_t ev, const uint8_t widget)
     active_widgets_ind[ev] = widget;
     
     if (active_widget_type >= 0) {
-        // 已有活动 widget
+        // Already have active widget
         if (state == LED_STATE_PAUSE || 
             LED_ACTIVE_WIDGET_GET(ev).priority <= LED_ACTIVE_WIDGET_GET(active_widget_type).priority) {
             return;
         }
         
-        // 如果是状态 widget，立即显示
+        // If status widget, show immediately
         if (widget_is_status(&LED_ACTIVE_WIDGET_GET(ev))) {
             led_off_all();
             run_widget_cmd(ev, 0);
@@ -169,7 +169,7 @@ static void led_widget_schedule(const led_event_type_t ev, const uint8_t widget)
     }
 }
 
-// 循环定时器处理
+// Loop timer handler
 static void loop_timer_handler(struct k_timer *timer) {
     const led_event_type_t ev = (timer - loop_timers);
     LOG_DBG("loop timer: event=%u", ev);
@@ -178,9 +178,9 @@ static void loop_timer_handler(struct k_timer *timer) {
     }
 }
 
-// 事件监听器
+// Event listener
 static int led_widgets_event_listener(const zmk_event_t *ev) {
-    // USB 连接状态
+    // USB connection state
     const struct zmk_usb_conn_state_changed *usb_ev = as_zmk_usb_conn_state_changed(ev);
     if (usb_ev) {
         uint8_t widget_idx = usb_ev->conn_state == ZMK_USB_CONN_HID ? 0 : 1;
@@ -189,22 +189,22 @@ static int led_widgets_event_listener(const zmk_event_t *ev) {
         return ZMK_EV_EVENT_BUBBLE;
     }
     
-    // 电池状态
+    // Battery state
     const struct zmk_battery_state_changed *bat_ev = as_zmk_battery_state_changed(ev);
     if (bat_ev) {
         LOG_INF("Battery: %u%%", bat_ev->state_of_charge);
-        // 根据电量选择 widget: 0=正常, 1=低电量
+        // Select widget based on battery level: 0=normal, 1=low
         uint8_t widget_idx = bat_ev->state_of_charge < 20 ? 1 : 0;
         led_widget_schedule(LED_EVENT_BATTERY, widget_idx);
         return ZMK_EV_EVENT_BUBBLE;
     }
     
-    // BLE 状态 - 这里需要手动检查连接状态
+    // BLE state - need to manually check connection status
     const struct zmk_ble_active_profile_changed *ble_ev = as_zmk_ble_active_profile_changed(ev);
     if (ble_ev) {
         bool connected = zmk_ble_active_profile_is_connected();
         LOG_INF("BLE: %s", connected ? "connected" : "disconnected");
-        // 0=已连接, 1=未连接
+        // 0=connected, 1=disconnected
         uint8_t widget_idx = connected ? 0 : 1;
         led_widget_schedule(LED_EVENT_BLE, widget_idx);
         return ZMK_EV_EVENT_BUBBLE;
@@ -213,7 +213,7 @@ static int led_widgets_event_listener(const zmk_event_t *ev) {
     return ZMK_EV_EVENT_BUBBLE;
 }
 
-// 初始化
+// Initialization
 static int led_widgets_init(void) {
     if (!device_is_ready(leds)) {
         LOG_ERR("LED device not ready");
