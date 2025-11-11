@@ -5,3 +5,19 @@
  */
 
 #include "s60test.dtsi"
+
+/ {
+	chosen {
+		zmk,led-widgets-dev = &led_pwm;
+	};
+
+	led_pwm: pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+		
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Status LED";
+		};
+	};
+};
