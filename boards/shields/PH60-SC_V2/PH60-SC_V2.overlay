@@ -1,8 +1,9 @@
-#include "boards/shields/PH60-SC_V2/PH60-SC_V2.dtsi"
 /*
  * Copyright (c) 2025 Team PHDesign
  *
  * SPDX-License-Identifier: MIT
  */
+
+#include "PH60-SC_V2.dtsi"
 
 
