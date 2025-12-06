@@ -1,4 +1,4 @@
-#include "PH60-SC_V2.dtsi"
+#include "boards/shields/PH60-SC_V2/PH60-SC_V2.dtsi"
 /*
  * Copyright (c) 2025 Team PHDesign
  *
