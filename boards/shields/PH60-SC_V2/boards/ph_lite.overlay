@@ -65,7 +65,7 @@
     /* Battery voltage divider (VBATT) on P0.19 */
     vbatt: vbatt {
         compatible = "zmk,battery-voltage-divider";
-        io-channels = <&adc 0>;
+        io-channels = <&adc 1>;
         power-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
         output-ohms = <2000000>;
         full-ohms = <(2000000 + 806000)>;
