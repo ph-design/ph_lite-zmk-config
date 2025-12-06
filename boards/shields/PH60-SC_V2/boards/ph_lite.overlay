@@ -62,11 +62,10 @@
         init-delay-ms = <50>;
     };
 
-    /* Battery voltage divider (VBATT) on P0.19 */
+    /* Battery voltage divider */
     vbatt: vbatt {
         compatible = "zmk,battery-voltage-divider";
-        io-channels = <&adc 1>;
-        power-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+        io-channels = <&adc 0>;
         output-ohms = <2000000>;
         full-ohms = <(2000000 + 806000)>;
     };
