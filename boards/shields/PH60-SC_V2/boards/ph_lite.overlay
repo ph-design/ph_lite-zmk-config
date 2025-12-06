@@ -4,7 +4,7 @@
  * LED strip and battery divider definitions in a shield/boards/<board>.overlay
  */
 
-#include "boards/shields/PH60-SC_V2/PH60-SC_V2.dtsi"
+#include "../PH60-SC_V2.dtsi"
 
 / {
     chosen {
