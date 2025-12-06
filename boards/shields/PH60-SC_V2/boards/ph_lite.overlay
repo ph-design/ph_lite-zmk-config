@@ -4,34 +4,61 @@
  * LED strip and battery divider definitions in a shield/boards/<board>.overlay
  */
 
-/ {
-    chosen {
-        /* Underglow and LED widgets point to the LED strip device */
-        zmk,underglow = &ws2812_leds;
-        zmk,led-widgets-dev = &ws2812_leds;
-        zmk,leds = &ws2812_leds;
-        /* Battery voltage divider chosen node */
-        zmk,battery = &vbatt;
+#include <dt-bindings/led/led.h>
+
+&pinctrl {
+    spi3_default: spi3_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_MOSI, 1, 2)>;
+        };
     };
 
-    /* WS2812 / SK6812 chain on P1.02, 61 LEDs (one per key)
-     * Note: For nRF52 boards the tutorial recommends using an SPI-based
-     * driver (worldsemi,ws2812-spi) tied to a SPI controller. If you prefer
-     * the GPIO driver, the worldsemi,ws2812 compatible with `gpios` works too.
-     */
-    ws2812_leds: ws2812_leds {
-        compatible = "worldsemi,ws2812";
-        gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+    spi3_sleep: spi3_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_MOSI, 1, 2)>;
+            low-power-enable;
+        };
+    };
+};
+
+&spi3 {
+    compatible = "nordic,nrf-spim";
+    status = "okay";
+
+    pinctrl-0 = <&spi3_default>;
+    pinctrl-1 = <&spi3_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    led_strip: ws2812@0 {
+        compatible = "worldsemi,ws2812-spi";
+
+        /* SPI */
+        reg = <0>;
+        spi-max-frequency = <4000000>;
+
+        /* WS2812 */
         chain-length = <61>;
-        status = "okay";
-        label = "WS2812_LEDS";
+        spi-one-frame = <0x70>;
+        spi-zero-frame = <0x40>;
+        color-mapping = <LED_COLOR_ID_GREEN
+                         LED_COLOR_ID_RED
+                         LED_COLOR_ID_BLUE>;
+    };
+};
+
+/ {
+    chosen {
+        zmk,underglow = &led_strip;
+        zmk,led-widgets-dev = &led_strip;
+        zmk,leds = &led_strip;
+        zmk,battery = &vbatt;
     };
 
     /* Battery voltage divider (VBATT) on P0.19 */
     vbatt: vbatt {
         compatible = "zmk,battery-voltage-divider";
-        io-channels = <&adc 19>;
-        /* Typical divider values (adjust to your hardware) */
+        io-channels = <&adc 0>;
+        power-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
         output-ohms = <2000000>;
         full-ohms = <(2000000 + 806000)>;
     };
