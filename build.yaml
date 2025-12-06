@@ -24,3 +24,8 @@ include:
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
     artifact-name: ph_lite_s60test_with_studio
+  - board: ph_lite
+    shield: PH60-SC_V2
+    snippet: studio-rpc-usb-uart
+    cmake-args: -DCONFIG_ZMK_STUDIO=y
+    artifact-name: ph_lite_PH60-SC_V2_with_studio
