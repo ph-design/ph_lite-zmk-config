@@ -5,6 +5,7 @@
  */
 
 #include <nordic/nrf52840_qiaa.dtsi>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include "ph_lite-pinctrl.dtsi"
 
 / {
@@ -27,6 +28,22 @@
         compatible = "zmk,battery-charge-state";
         charge-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
     };
+
+    magic_mapper: magic_mapper {
+        compatible = "zmk,bootmode-to-magic-mapper";
+        status = "okay";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        boot_retention: retention@0 {
+            compatible = "zephyr,retention";
+            status = "okay";
+            reg = <0x0 0x1>;
+        };
+    };
+};
+
+&uicr {
+    nfct-pins-as-gpios;
 };
 
 &adc {
@@ -45,11 +62,17 @@
     status = "okay";
 };
 
+&reg0 {
+    status = "okay";
+};
+
+&reg1 {
+    status = "okay";
+};
 
 zephyr_udc0: &usbd {
     status = "okay";
 };
-
 
 &flash0 {
     /*
