@@ -5,6 +5,7 @@
  */
 
 #include <nordic/nrf52840_qiaa.dtsi>
+#include <common/nordic/nrf52840_uf2_boot_mode.dtsi>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include "ph_lite-pinctrl.dtsi"
 
@@ -17,6 +18,8 @@
         zephyr,sram = &sram0;
         zephyr,flash = &flash0;
         zmk,kscan = &kscan0;
+        zephyr,boot-mode = &boot_retention;
+        zmk,magic-boot-mode = &adafruit_boot_retention;
     };
 
     kscan0: kscan {
@@ -32,6 +35,14 @@
 
 &uicr {
     nfct-pins-as-gpios;
+};
+
+&gpregret1 {
+    adafruit_boot_retention: retention@0 {
+        compatible = "zephyr,retention";
+        status = "okay";
+        reg = <0x0 0x1>;
+    };
 };
 
 &adc {
@@ -60,6 +71,18 @@
 
 zephyr_udc0: &usbd {
     status = "okay";
+};
+
+magic_mapper: magic_mapper {
+    compatible = "zmk,bootmode-to-magic-mapper";
+    status = "okay";
+    #address-cells = <1>;
+    #size-cells = <1>;
+    boot_retention: retention@0 {
+        compatible = "zephyr,retention";
+        status = "okay";
+        reg = <0x0 0x1>;
+    };
 };
 
 
