@@ -31,6 +31,18 @@
         compatible = "zmk,battery-charge-state";
         charge-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
     };
+
+    magic_mapper: magic_mapper {
+        compatible = "zmk,bootmode-to-magic-mapper";
+        status = "okay";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        boot_retention: retention@0 {
+            compatible = "zephyr,retention";
+            status = "okay";
+            reg = <0x0 0x1>;
+        };
+    };
 };
 
 &uicr {
@@ -72,19 +84,6 @@
 zephyr_udc0: &usbd {
     status = "okay";
 };
-
-magic_mapper: magic_mapper {
-    compatible = "zmk,bootmode-to-magic-mapper";
-    status = "okay";
-    #address-cells = <1>;
-    #size-cells = <1>;
-    boot_retention: retention@0 {
-        compatible = "zephyr,retention";
-        status = "okay";
-        reg = <0x0 0x1>;
-    };
-};
-
 
 &flash0 {
     /*
