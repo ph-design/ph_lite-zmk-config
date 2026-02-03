@@ -5,7 +5,6 @@
  */
 
 #include <nordic/nrf52840_qiaa.dtsi>
-#include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include "ph_lite-pinctrl.dtsi"
 
 / {
