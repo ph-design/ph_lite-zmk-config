@@ -16,12 +16,27 @@
 
     behaviors {
         
+        // Macro to clear current BT profile (tap)
+        bt_clear_current_macro: bt_clear_current_macro {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&bt BT_CLR>;
+        };
+
+        // Macro to clear all BT profiles (hold)
+        bt_clear_all_macro: bt_clear_all_macro {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&bt BT_CLR_ALL>;
+        };
+
+        // Hold to clear all BT profiles, Tap to clear current
         bt_clear_holdtap: bt_clear_holdtap {
             compatible = "zmk,behavior-hold-tap";
             #binding-cells = <2>;
             flavor = "tap-preferred";
             tapping-term-ms = <3000>;
-            bindings = <&bt BT_CLR_ALL>, <&bt BT_CLR>;
+            bindings = <&bt_clear_all_macro>, <&bt_clear_current_macro>;
         };
 
     };
