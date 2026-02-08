@@ -66,16 +66,23 @@
 		control-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
 	};
 
-	soft_off_wakers {
-		compatible = "zmk,soft-off-wakeup-sources";
-		wakeup-sources = <&kscan_wakeup>;
+	keys {
+		compatible = "gpio-keys";
+		wakeup_key: wakeup_key {
+			gpios = <&gpio0 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;  // Row 2
+		};
 	};
 
-	kscan_wakeup: kscan_wakeup {
-		compatible = "zmk,kscan-wakeup-trigger-consumer";
-		wakeup-source = <&kscan0>;
-		column = <12>;
-		row = <2>;
+	wakeup_scan: wakeup_scan {
+		compatible = "zmk,gpio-key-wakeup-trigger";
+		trigger = <&wakeup_key>;
+		wakeup-source;
+		extra-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;  // Column 12
+	};
+
+	soft_off_wakers {
+		compatible = "zmk,soft-off-wakeup-sources";
+		wakeup-sources = <&wakeup_scan>;
 	};
 };
 
