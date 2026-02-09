@@ -106,11 +106,11 @@
 
         default_rgb {
             bindings = <
-&ug TEAL      &ug TEAL &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL      &ug TEAL
-&ug TEAL      &ug TEAL &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL      &ug TEAL
-&ug_cl ___ GREEN      &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL      &ug TEAL
-&ug TEAL               &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL  &ug TEAL              &ug TEAL
-&ug TEAL      &ug TEAL &ug TEAL                      &ug TEAL                      &ug TEAL  &ug TEAL  &ug TEAL              &ug TEAL
+&ug ___       &ug ___ &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___       &ug ___
+&ug ___       &ug ___ &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___       &ug ___
+&ug_cl ___ GREEN      &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___                  &ug ___
+&ug ___                &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___               &ug ___
+&ug ___       &ug ___ &ug ___                          &ug ___                          &ug ___    &ug ___    &ug ___               &ug ___
             >;
             layer-id = <LAYER_Base>;
         };
