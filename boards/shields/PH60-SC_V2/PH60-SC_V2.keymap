@@ -118,21 +118,21 @@
         function_rgb {
             bindings = <
 &ug ORANGE    &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug RED
-&ug ___       &ug ___    &ug GREEN  &ug ___    &ug RED    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug BLUE   &ug BLUE   &ug BLUE   &ug GOLD
-&ug ___       &ug GREEN  &ug GREEN  &ug GREEN  &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug BLUE   &ug BLUE              &ug ___
-&ug ___                  &ug PURPLE &ug PURPLE &ug PURPLE &ug PURPLE &ug BLUE   &ug ___    &ug ___    &ug ___    &ug ___    &ug ___               &ug ___
-&ug ___       &ug ___    &ug ___                          &ug ___                          &ug ___    &ug ___    &ug ___               &ug ___
+&ug BLACK     &ug BLACK  &ug GREEN  &ug BLACK  &ug RED    &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLUE   &ug BLUE   &ug BLUE   &ug GOLD
+&ug BLACK     &ug GREEN  &ug GREEN  &ug GREEN  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLUE   &ug BLUE              &ug BLACK
+&ug BLACK                 &ug PURPLE &ug PURPLE &ug PURPLE &ug PURPLE &ug BLUE   &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK               &ug BLACK
+&ug BLACK     &ug BLACK  &ug BLACK                         &ug BLACK                         &ug BLACK  &ug BLACK  &ug BLACK               &ug BLACK
             >;
             layer-id = <LAYER_Function>;
         };
 
         bluetooth_rgb {
             bindings = <
-&ug ___       &ug BLUE  &ug BLUE  &ug BLUE  &ug BLUE  &ug BLUE  &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___       &ug RED
-&ug GREEN     &ug ___   &ug ___   &ug ___   &ug RED   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___       &ug ___
-&ug ___       &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___                 &ug ORANGE
-&ug ___                 &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___   &ug ___                 &ug ___
-&ug ___       &ug ___   &ug ___                       &ug ___                       &ug ___   &ug ___   &ug ___                 &ug ___
+&ug BLACK     &ug BLUE  &ug BLUE  &ug BLUE  &ug BLUE  &ug BLUE  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK     &ug RED
+&ug GREEN     &ug BLACK &ug BLACK &ug BLACK &ug RED   &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK     &ug BLACK
+&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug ORANGE
+&ug BLACK                 &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
+&ug BLACK     &ug BLACK &ug BLACK                      &ug BLACK                      &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
             >;
             layer-id = <LAYER_Bluetooth>;
         };
