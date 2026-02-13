@@ -13,6 +13,9 @@ manifest:
       remote: phdesign
       revision: rgb_rpc_mj_demo
       import: app/west.yml
+    - name: zmk-studio-messages
+      url: https://github.com/miaomaioji/zmk-studio-messages
+      revision: main
   self:
     path: config
 
