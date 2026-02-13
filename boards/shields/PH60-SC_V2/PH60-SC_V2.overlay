@@ -52,6 +52,7 @@
 		zmk,battery = &vddh;
 		zmk,underglow = &led_strip;
 		zmk,ext-power = &rgb_power;
+		zmk,studio-rpc-uart = &snippet_studio_rpc_usb_uart;
 	};
 
 	vddh: vddh {
@@ -83,6 +84,12 @@
 	soft_off_wakers {
 		compatible = "zmk,soft-off-wakeup-sources";
 		wakeup-sources = <&wakeup_scan>;
+	};
+};
+
+&zephyr_udc0 {
+	snippet_studio_rpc_usb_uart: snippet_studio_rpc_usb_uart {
+		compatible = "zephyr,cdc-acm-uart";
 	};
 };
 
