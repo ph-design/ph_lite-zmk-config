@@ -1,6 +1,6 @@
 manifest:
   defaults:
-    revision: 0.3
+    revision: rgb_rpc_mj_demo
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware/
