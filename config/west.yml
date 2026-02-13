@@ -11,7 +11,7 @@ manifest:
   projects:
     - name: zmk
       remote: phdesign
-      revision: mj_demo_pr
+      revision: rgb_rpc_mj_demo
       import: app/west.yml
   self:
     path: config
