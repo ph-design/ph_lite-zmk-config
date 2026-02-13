@@ -15,6 +15,7 @@
 #define LAYER_Base 0
 #define LAYER_Function 1
 #define LAYER_Bluetooth 2
+#define LAYER_RGB 3
 
 
 
@@ -67,7 +68,7 @@
 &kp GRAVE &kp F1    &kp F2    &kp F3          &kp F4    &kp F5    &kp F6    &kp F7    &kp F8    &kp F9    &kp F10   &kp F11   &kp F12       &kp DEL
 &trans    &trans    &kp UP    &trans          &sys_reset  &trans  &trans    &trans    &trans    &trans    &kp PSCRN &kp HOME  &kp END       &studio_unlock
 &trans    &kp LEFT  &kp DOWN  &kp RIGHT       &trans      &trans  &trans    &trans    &trans    &trans    &kp PG_UP &kp PG_DN               &trans
-&trans              &rgb_ug RGB_TOG &rgb_ug RGB_EFF &rgb_ug RGB_BRI &rgb_ug RGB_BRD &mo 2 &trans &trans &trans &trans &trans                  &trans
+&trans              &rgb_ug RGB_TOG &mo 3           &trans          &trans          &mo 2 &trans &trans &trans &trans &trans                  &trans
 &trans    &trans    &trans                              &trans                                  &trans    &trans    &trans                  &trans
             >;
         };
@@ -80,6 +81,17 @@
 &trans       &trans        &trans        &trans        &trans        &trans        &trans  &trans  &trans  &trans  &trans  &trans          &soft_off
 &trans                     &trans        &trans        &trans        &trans        &trans  &trans  &trans  &trans  &trans  &trans          &trans
 &trans       &trans        &trans                                    &trans                        &trans  &trans  &trans                  &trans
+            >;
+        };
+
+        rgb_layer {
+            display-name = "RGB";
+            bindings = <
+&trans       &trans        &trans        &trans        &trans        &trans        &trans               &trans             &trans             &trans             &trans             &trans              &trans        &rgb_ug RGB_TOG
+&trans       &trans        &trans        &trans        &trans        &trans        &trans               &rgb_ug RGB_HUD    &rgb_ug RGB_HUI    &rgb_ug RGB_SAD    &rgb_ug RGB_SAI    &rgb_ug RGB_EFR     &rgb_ug RGB_EFF   &trans
+&trans       &trans        &trans        &trans        &trans        &trans        &trans               &rgb_ug RGB_BRD    &rgb_ug RGB_BRI    &rgb_ug RGB_SPD    &rgb_ug RGB_SPI    &trans                                &trans
+&trans                     &trans        &trans        &trans        &trans        &trans               &trans             &trans             &trans             &trans             &trans                                &trans
+&trans       &trans        &trans                                     &trans                                      &trans             &trans             &trans                                &trans
             >;
         };
 
@@ -120,7 +132,7 @@
 &ug ORANGE    &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug RED
 &ug BLACK     &ug BLACK  &ug GREEN  &ug BLACK  &ug RED    &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLUE   &ug BLUE   &ug BLUE   &ug GOLD
 &ug BLACK     &ug GREEN  &ug GREEN  &ug GREEN  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLUE   &ug BLUE              &ug BLACK
-&ug BLACK                 &ug PURPLE &ug PURPLE &ug PURPLE &ug PURPLE &ug BLUE   &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK               &ug BLACK
+&ug BLACK                 &ug PURPLE &ug GOLD   &ug BLACK  &ug BLACK  &ug BLUE   &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK               &ug BLACK
 &ug BLACK     &ug BLACK  &ug BLACK                         &ug BLACK                         &ug BLACK  &ug BLACK  &ug BLACK               &ug BLACK
             >;
             layer-id = <LAYER_Function>;
@@ -135,6 +147,17 @@
 &ug BLACK     &ug BLACK &ug BLACK                      &ug BLACK                      &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
             >;
             layer-id = <LAYER_Bluetooth>;
+        };
+
+        rgb_rgb {
+            bindings = <
+&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK     &ug GOLD
+&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug PURPLE &ug ORANGE &ug PURPLE &ug ORANGE &ug GREEN  &ug GREEN     &ug BLACK
+&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug PURPLE &ug ORANGE &ug PURPLE &ug ORANGE &ug BLACK               &ug BLACK
+&ug BLACK                 &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
+&ug BLACK     &ug BLACK &ug BLACK                      &ug BLACK                       &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
+            >;
+            layer-id = <LAYER_RGB>;
         };
     };
 };
