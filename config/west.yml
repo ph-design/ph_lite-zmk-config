@@ -6,6 +6,8 @@ manifest:
       url-base: https://github.com/zmkfirmware/
     - name: phdesign
       url-base: https://github.com/ph-design/
+    - name: miaomaioji
+      url-base: https://github.com/miaomaioji/
     # Additional modules containing boards/shields/custom code can be listed here as well
     # See https://docs.zephyrproject.org/3.2.0/develop/west/manifest.html#projects
   projects:
@@ -13,6 +15,10 @@ manifest:
       remote: phdesign
       revision: rgb_rpc_mj_demo
       import: app/west.yml
+    - name: zmk-studio-messages
+      remote: miaomaioji
+      revision: rpc_mj_demo
+      path: modules/msgs/zmk-studio-messages
   self:
     path: config
 
