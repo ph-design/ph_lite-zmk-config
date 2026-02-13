@@ -87,7 +87,7 @@
         rgb_layer {
             display-name = "RGB";
             bindings = <
-&trans       &trans        &trans        &trans        &trans        &trans        &trans               &trans             &trans             &trans             &trans             &trans              &trans        &rgb_ug RGB_TOG
+&trans       &trans        &trans        &trans        &trans        &trans        &trans               &trans             &trans             &trans             &trans             &trans              &trans            &trans 
 &trans       &trans        &trans        &trans        &trans        &trans        &trans               &rgb_ug RGB_HUD    &rgb_ug RGB_HUI    &rgb_ug RGB_SAD    &rgb_ug RGB_SAI    &rgb_ug RGB_EFR     &rgb_ug RGB_EFF   &trans
 &trans       &trans        &trans        &trans        &trans        &trans        &trans               &rgb_ug RGB_BRD    &rgb_ug RGB_BRI    &rgb_ug RGB_SPD    &rgb_ug RGB_SPI    &trans                                &trans
 &trans                     &trans        &trans        &trans        &trans        &trans               &trans             &trans             &trans             &trans             &trans                                &trans
@@ -151,7 +151,7 @@
 
         rgb_rgb {
             bindings = <
-&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK     &ug GOLD
+&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK     &ug BLACK
 &ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug PURPLE &ug ORANGE &ug PURPLE &ug ORANGE &ug GREEN  &ug GREEN     &ug BLACK
 &ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug PURPLE &ug ORANGE &ug PURPLE &ug ORANGE &ug BLACK               &ug BLACK
 &ug BLACK                 &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
