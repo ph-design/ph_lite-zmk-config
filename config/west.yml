@@ -1,6 +1,6 @@
 manifest:
   defaults:
-    revision: v0.3
+    revision: mj_demo_pr
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware/
@@ -11,7 +11,7 @@ manifest:
   projects:
     - name: zmk
       remote: phdesign
-      revision: pr_2752_mj
+      revision: mj_demo_pr
       import: app/west.yml
   self:
     path: config
