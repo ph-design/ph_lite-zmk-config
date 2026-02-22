@@ -9,13 +9,14 @@
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/outputs.h>
 #include <dt-bindings/zmk/rgb.h>
-#include <dt-bindings/zmk/rgb_colors.h>
 #include <dt-bindings/zmk/hid_indicators.h>
 
 #define LAYER_Base 0
 #define LAYER_Function 1
 #define LAYER_Bluetooth 2
 #define LAYER_RGB 3
+
+#include "PH60-SC_V2-rgb.dtsi"
 
 
 
@@ -103,61 +104,6 @@
         extra2 {
             display-name = "Extra 2";
             status = "reserved";
-        };
-    };
-
-    underglow-layer {
-        compatible = "zmk,underglow-layer";
-        pixel-lookup = <
-             0  1  2  3  4  5  6  7  8  9 10 11 12 13
-            27 26 25 24 23 22 21 20 19 18 17 16 15 14
-            28 29 30 31 32 33 34 35 36 37 38 39 40
-            52 51 50 49 48 47 46 45 44 43 42 41
-            53 54 55 56 57 58 59 60
-        >;
-
-        default_rgb {
-            bindings = <
-&ug ___       &ug ___ &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___       &ug ___
-&ug ___       &ug ___ &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___       &ug ___
-&ug_cl ___ GREEN      &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___                  &ug ___
-&ug ___                &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___               &ug ___
-&ug ___       &ug ___ &ug ___                          &ug ___                          &ug ___    &ug ___    &ug ___               &ug ___
-            >;
-            layer-id = <LAYER_Base>;
-        };
-
-        function_rgb {
-            bindings = <
-&ug ORANGE    &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug RED
-&ug BLACK     &ug BLACK  &ug GREEN  &ug BLACK  &ug RED    &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLUE   &ug BLUE   &ug BLUE   &ug GOLD
-&ug BLACK     &ug GREEN  &ug GREEN  &ug GREEN  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLUE   &ug BLUE              &ug BLACK
-&ug BLACK                 &ug PURPLE &ug GOLD   &ug BLACK  &ug BLACK  &ug BLUE   &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK               &ug BLACK
-&ug BLACK     &ug BLACK  &ug BLACK                         &ug BLACK                         &ug BLACK  &ug BLACK  &ug BLACK               &ug BLACK
-            >;
-            layer-id = <LAYER_Function>;
-        };
-
-        bluetooth_rgb {
-            bindings = <
-&ug BLACK     &ug BLUE  &ug BLUE  &ug BLUE  &ug BLUE  &ug BLUE  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK     &ug RED
-&ug GREEN     &ug BLACK &ug BLACK &ug BLACK &ug RED   &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK     &ug BLACK
-&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug ORANGE
-&ug BLACK                 &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
-&ug BLACK     &ug BLACK &ug BLACK                      &ug BLACK                      &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
-            >;
-            layer-id = <LAYER_Bluetooth>;
-        };
-
-        rgb_rgb {
-            bindings = <
-&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK     &ug BLACK
-&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug PURPLE &ug ORANGE &ug PURPLE &ug ORANGE &ug GREEN  &ug GREEN     &ug BLACK
-&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug PURPLE &ug ORANGE &ug PURPLE &ug ORANGE &ug BLACK               &ug BLACK
-&ug BLACK                 &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
-&ug BLACK     &ug BLACK &ug BLACK                      &ug BLACK                       &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
-            >;
-            layer-id = <LAYER_RGB>;
         };
     };
 };
