@@ -96,8 +96,8 @@
             bindings = <
 &ug ___       &ug ___ &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___       &ug ___
 &ug ___       &ug ___ &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___       &ug ___
-&ug_cl ___ GREEN      &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___                  &ug ___
-&ug ___                &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___               &ug ___
+&ug_cl ___ GREEN      &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___       &ug ___
+&ug ___               &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___                  &ug ___
 &ug ___       &ug ___ &ug ___                          &ug ___                          &ug ___    &ug ___    &ug ___               &ug ___
             >;
         };
