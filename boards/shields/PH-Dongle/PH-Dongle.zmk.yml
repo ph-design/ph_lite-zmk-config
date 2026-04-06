@@ -1,0 +1,6 @@
+file_format: "1"
+id: PH-Dongle
+name: PH-Dongle
+type: shield
+url: https://github.com/ph-design/ph_lite-zmk-config
+requires: [ph_lite]

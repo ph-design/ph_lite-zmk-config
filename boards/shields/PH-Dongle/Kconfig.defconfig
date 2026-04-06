@@ -1,0 +1,12 @@
+if SHIELD_PH_DONGLE
+
+config ZMK_KEYBOARD_NAME
+    default "PH-Dongle"
+
+config ZMK_USB
+    default y
+
+config ZMK_BLE
+    default n
+
+endif

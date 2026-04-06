@@ -1,0 +1,30 @@
+#include <dt-bindings/zmk/matrix_transform.h>
+#include <physical_layouts.dtsi>
+
+/ {
+    dongle_transform: dongle_transform {
+        compatible = "zmk,matrix-transform";
+        columns = <1>;
+        rows = <1>;
+        map = <RC(0,0)>;
+    };
+
+    dongle_layout: dongle_layout {
+        compatible = "zmk,physical-layout";
+        display-name = "Dongle";
+        transform = <&dongle_transform>;
+        kscan = <&kscan0>;
+        keys = <&key_physical_attrs 100 100 0 0 0 0 0>;
+    };
+
+    chosen {
+        zmk,physical-layout = &dongle_layout;
+    };
+};
+
+&kscan0 {
+    compatible = "zmk,kscan-mock";
+    columns = <1>;
+    rows = <1>;
+    events = <0>;
+};
