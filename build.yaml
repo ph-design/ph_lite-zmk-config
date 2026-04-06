@@ -33,13 +33,13 @@ include:
 
   - board: ph_lite
     shield: PH60-Multi_V2
-    snippet: studio-rpc-usb-uart
+    snippet: studio-rpc-usb-uart zmk-usb-logging
     cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=y
     artifact-name: PH60-Multi_V2_Release
 
   - board: ph_lite
     shield: PH60-Multi_V2
-    snippet: studio-rpc-usb-uart
+    snippet: studio-rpc-usb-uart zmk-usb-logging
     cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
     artifact-name: PH60-Multi_V2_Release_unsafe
   - board: ph_lite
