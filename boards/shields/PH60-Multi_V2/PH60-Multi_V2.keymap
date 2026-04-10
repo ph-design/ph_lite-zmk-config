@@ -70,7 +70,7 @@
             display-name = "Wireless";
             bindings = <
 &trans       &bt BT_SEL 0  &bt BT_SEL 1  &bt BT_SEL 2  &bt BT_SEL 3  &bt BT_SEL 4  &trans  &trans  &trans  &trans  &trans  &trans  &trans  &bt_clear_holdtap 0 0  &trans
-&out OUT_TOG &trans        &out OUT_2G4  &trans        &bootloader   &trans        &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans
+&out OUT_TOG &out OUT_WIRELESS_BLE  &out OUT_WIRELESS_2G4  &trans        &bootloader   &trans        &trans  &trans  &trans  &trans  &trans  &trans  &trans  &trans
 &trans       &trans        &trans        &trans        &trans        &trans      &trans  &trans  &trans  &trans  &trans  &trans          &soft_off
 &trans       &trans        &trans        &trans        &trans        &trans        &trans  &trans  &trans  &trans  &trans  &trans          &trans           &trans
 &trans       &trans        &trans                  &trans               &trans               &trans         &trans    &trans    &trans        &trans
