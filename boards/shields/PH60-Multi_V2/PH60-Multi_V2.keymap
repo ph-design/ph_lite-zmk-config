@@ -58,9 +58,9 @@
         function_layer {
             display-name = "Function";
             bindings = <
-&kp GRAVE &kp F1    &kp F2    &kp F3          &kp F4    &kp F5    &kp F6    &kp F7    &kp F8    &kp F9    &kp F10   &kp F11   &kp F12       &kp DEL   &trans
-&kp CAPS  &kp C_BRI_UP &kp UP &kp C_BRI_DN   &sys_reset &trans   &trans    &trans    &kp PSCRN &kp SLCK  &kp PAUSE &kp HOME  &kp END       &studio_unlock
-&trans    &kp LEFT  &kp DOWN  &kp RIGHT       &kp VOL_UP &kp VOL_DN &kp MUTE &trans    &kp HOME  &kp PG_UP &kp LEFT  &kp RIGHT               &trans
+&kp GRAVE &kp F1    &kp F2    &kp F3          &kp F4      &kp F5      &kp F6      &kp F7      &kp F8      &kp F9      &kp F10     &kp F11     &kp F12       &kp DEL   &trans
+&kp CAPS  &kp C_BRI_UP &kp UP &kp C_BRI_DN   &sys_reset  &trans      &trans      &trans      &kp PSCRN   &kp SLCK    &kp PAUSE   &kp HOME    &kp END       &studio_unlock
+&trans    &kp LEFT  &kp DOWN  &kp RIGHT       &kp VOL_UP  &kp VOL_DN  &kp MUTE    &trans      &trans      &trans      &kp PG_UP   &kp PG_DN               &trans
 &trans    &trans    &kp MEDIA_PREV &kp MEDIA_NEXT &kp MEDIA_PLAY_PAUSE &kp MEDIA_STOP &mo 2 &kp KP_PLUS &kp KP_MINUS &kp END &kp PG_DN &trans &trans &trans
 &trans    &trans    &trans              &trans               &trans               &trans         &trans    &trans    &trans        &trans
             >;
