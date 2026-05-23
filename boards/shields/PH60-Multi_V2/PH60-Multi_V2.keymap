@@ -58,11 +58,11 @@
         function_layer {
             display-name = "Function";
             bindings = <
-&kp GRAVE &kp F1    &kp F2    &kp F3          &kp F4      &kp F5      &kp F6      &kp F7      &kp F8      &kp F9      &kp F10     &kp F11     &kp F12       &kp DEL   &trans
-&kp CAPS  &kp C_BRI_UP &kp UP &kp C_BRI_DN   &sys_reset  &trans      &trans      &trans      &kp PSCRN   &kp SLCK    &kp PAUSE   &kp HOME    &kp END       &studio_unlock
-&trans    &kp LEFT  &kp DOWN  &kp RIGHT       &kp VOL_UP  &kp VOL_DN  &kp MUTE    &trans      &trans      &trans      &kp PG_UP   &kp PG_DN               &trans
-&trans    &trans    &kp MEDIA_PREV &kp MEDIA_NEXT &kp MEDIA_PLAY_PAUSE &kp MEDIA_STOP &mo 2 &kp KP_PLUS &kp KP_MINUS &kp END &kp PG_DN &trans &trans &trans
-&trans    &trans    &trans              &trans               &trans               &trans         &trans    &trans    &trans        &trans
+&kp C_PWR &kp F1       &kp F2       &kp F3     &kp F4      &kp F5 &kp F6    &kp F7    &kp F8     &kp F9    &kp F10         &kp F11   &kp F12 &kp INS &kp DEL
+&kp CAPS  &kp C_BRI_UP &kp C_BRI_DN &trans     &sys_reset  &trans &trans    &trans    &kp PSCRN  &kp SLCK  &kp PAUSE_BREAK &kp UP    &trans  &kp DEL
+&trans    &kp C_VOL_UP &kp C_VOL_DN &kp C_MUTE &kp C_EJECT &trans &kp ASTRK &kp SLASH &kp HOME   &kp PG_UP &kp LEFT        &kp RIGHT &trans
+&trans    &trans       &kp C_PREV   &kp C_NEXT &kp C_PP    &kp C_STOP &mo 2 &kp PLUS  &kp MINUS  &kp END   &kp PG_DN       &trans    &trans  &trans
+&trans    &trans       &trans       &trans     &trans      &trans &trans    &trans    &trans     &trans
             >;
         };
 
