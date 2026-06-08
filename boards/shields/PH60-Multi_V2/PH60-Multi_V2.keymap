@@ -39,6 +39,68 @@
             bindings = <&bt_clear_all_macro>, <&bt_clear_current_macro>;
         };
 
+        // Default mod-tap — hold-preferred, 200ms
+        ht_def: ht_def {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "hold-preferred";
+            tapping-term-ms = <200>;
+            bindings = <&kp>, <&kp>;
+        };
+
+        // Fast mod-tap — balanced, 150ms, quick-tap 100ms
+        ht_fast: ht_fast {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "balanced";
+            tapping-term-ms = <150>;
+            quick-tap-ms = <100>;
+            bindings = <&kp>, <&kp>;
+        };
+
+        // Slow layer-tap — tap-preferred, 280ms, retro-tap on
+        ht_slow: ht_slow {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "tap-preferred";
+            tapping-term-ms = <280>;
+            retro-tap;
+            bindings = <&mo>, <&kp>;
+        };
+
+        // User slots — default to hold-preferred 200ms, tweak in Studio
+        ht_user1: ht_user1 {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "hold-preferred";
+            tapping-term-ms = <200>;
+            bindings = <&kp>, <&kp>;
+        };
+
+        ht_user2: ht_user2 {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "hold-preferred";
+            tapping-term-ms = <200>;
+            bindings = <&kp>, <&kp>;
+        };
+
+        ht_user3: ht_user3 {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "hold-preferred";
+            tapping-term-ms = <200>;
+            bindings = <&kp>, <&kp>;
+        };
+
+        ht_user4: ht_user4 {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "hold-preferred";
+            tapping-term-ms = <200>;
+            bindings = <&kp>, <&kp>;
+        };
+
     };
 
     keymap {
