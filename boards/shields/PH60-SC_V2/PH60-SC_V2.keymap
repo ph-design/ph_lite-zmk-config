@@ -110,6 +110,40 @@
             bindings = <&kp>, <&kp>;
         };
     };
+    
+    combos {
+        compatible = "zmk,combos";
+
+        combo_reserved_0 {
+            reserved;
+            key-positions = <0 1>;
+            bindings = <&none>;
+        };
+
+        combo_reserved_1 {
+            reserved;
+            key-positions = <0 1>;
+            bindings = <&none>;
+        };
+
+        combo_reserved_2 {
+            reserved;
+            key-positions = <0 1>;
+            bindings = <&none>;
+        };
+
+        combo_reserved_3 {
+            reserved;
+            key-positions = <0 1>;
+            bindings = <&none>;
+        };
+
+        combo_reserved_4 {
+            reserved;
+            key-positions = <0 1>;
+            bindings = <&none>;
+        };
+    };
 
     keymap {
         compatible = "zmk,keymap";
