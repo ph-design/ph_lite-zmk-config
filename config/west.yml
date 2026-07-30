@@ -1,24 +1,19 @@
 manifest:
   defaults:
-    revision: rgb_rpc_mj_demo
+    revision: v0.3-lts
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware/
     - name: phdesign
       url-base: https://github.com/ph-design/
-    - name: miaomaioji
-      url-base: https://github.com/miaomaioji/
     # Additional modules containing boards/shields/custom code can be listed here as well
     # See https://docs.zephyrproject.org/3.2.0/develop/west/manifest.html#projects
   projects:
     - name: zmk
       remote: phdesign
-      revision: rgb_rpc_mj_demo
+      revision: v0.3-lts
       import: app/west.yml
-    - name: zmk-studio-messages
-      remote: miaomaioji
-      revision: rpc_mj_demo
-      path: modules/msgs/zmk-studio-messages
+    # zmk-studio-messages is provided by zmk's own app/west.yml
+    # (ph-design/zmk-studio-messages @ v0.3_lts) - do not override it here.
   self:
     path: config
-
