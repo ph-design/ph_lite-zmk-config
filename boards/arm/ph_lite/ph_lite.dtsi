@@ -22,12 +22,6 @@
         compatible = "zmk,kscan-gpio-dummy";
     };
 
-
-    charge_state: charge_state {
-        compatible = "zmk,battery-charge-state";
-        charge-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
-    };
-
     magic_mapper: magic_mapper {
         compatible = "zmk,bootmode-to-magic-mapper";
         status = "okay";
