@@ -1,0 +1,6 @@
+if SHIELD_PH60_SC_V2_EVO
+
+config ZMK_KEYBOARD_NAME
+    default "PH60-SC_V2_EVO"
+
+endif

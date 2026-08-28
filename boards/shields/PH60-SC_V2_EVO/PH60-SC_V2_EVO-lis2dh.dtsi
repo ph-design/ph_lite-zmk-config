@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2025 Team PHDesign
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+&pinctrl {
+        i2c0_default: i2c0_default {
+                group1 {
+                        psels = <NRF_PSEL(TWIM_SDA, 1, 13) NRF_PSEL(TWIM_SCL, 1, 15)>;
+                };
+        };
+
+        i2c0_sleep: i2c0_sleep {
+                group1 {
+                        psels = <NRF_PSEL(TWIM_SDA, 1, 13) NRF_PSEL(TWIM_SCL, 1, 15)>;
+                        low-power-enable;
+                };
+        };
+};
+
+&gpio0 {
+        // IMU VDD is fed from P0.30 so the sensor can be power-cycled by firmware
+        lis2dh_pwr_hog: lis2dh_pwr_hog {
+                gpio-hog;
+                gpios = <30 GPIO_ACTIVE_HIGH>;
+                output-high;
+        };
+};
+
+&gpio1 {
+        lis2dh_cs_hog: lis2dh_cs_hog {
+                gpio-hog;
+                gpios = <12 GPIO_ACTIVE_HIGH>;
+                output-high;
+        };
+
+        lis2dh_sa0_hog: lis2dh_sa0_hog {
+                gpio-hog;
+                gpios = <14 GPIO_ACTIVE_HIGH>;
+                output-high;
+        };
+};
+
+/ {
+        chosen {
+                zmk,imu = &lis2dh;
+        };
+};
+
+&i2c0 {
+        compatible = "nordic,nrf-twim";
+        status = "okay";
+
+        pinctrl-0 = <&i2c0_default>;
+        pinctrl-1 = <&i2c0_sleep>;
+        pinctrl-names = "default", "sleep";
+
+        lis2dh: lis2dh@19 {
+                compatible = "st,lis2dh12", "st,lis2dh";
+                reg = <0x19>;
+                irq-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>, <&gpio1 10 GPIO_ACTIVE_HIGH>;
+                // no disconnect-sdo-sa0-pull-up: SA0 floats on this PCB and
+                // relies on the chip's internal pull-up to stay at 0x19
+        };
+};

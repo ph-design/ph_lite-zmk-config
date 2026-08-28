@@ -1,0 +1,138 @@
+/*
+ * Copyright (c) 2025 Team PHDesign
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <dt-bindings/zmk/rgb.h>
+#include <dt-bindings/zmk/rgb_colors.h>
+
+/ {
+    rgb_transform: rgb_transform {
+        compatible = "zmk,rgb-matrix-transform";
+
+        // map[strip_idx] = binding_idx
+        // 数组长度 = chain-length (61)
+        map = <
+             0  1  2  3  4  5  6  7  8  9 10 11 12 13
+            27 26 25 24 23 22 21 20 19 18 17 16 15 14
+            28 29 30 31 32 33 34 35 36 37 38 39 40
+            52 51 50 49 48 47 46 45 44 43 42 41
+            53 54 55 56 57 58 59 60
+        >;
+
+        //              x      y
+        led-positions
+            = <  50    50>  // Key  0: Esc
+            , < 150    50>  // Key  1: 1
+            , < 250    50>  // Key  2: 2
+            , < 350    50>  // Key  3: 3
+            , < 450    50>  // Key  4: 4
+            , < 550    50>  // Key  5: 5
+            , < 650    50>  // Key  6: 6
+            , < 750    50>  // Key  7: 7
+            , < 850    50>  // Key  8: 8
+            , < 950    50>  // Key  9: 9
+            , <1050    50>  // Key 10: 0
+            , <1150    50>  // Key 11: -
+            , <1250    50>  // Key 12: =
+            , <1400    50>  // Key 13: Bksp
+            , <  75   150>  // Key 14: Tab
+            , < 200   150>  // Key 15: Q
+            , < 300   150>  // Key 16: W
+            , < 400   150>  // Key 17: E
+            , < 500   150>  // Key 18: R
+            , < 600   150>  // Key 19: T
+            , < 700   150>  // Key 20: Y
+            , < 800   150>  // Key 21: U
+            , < 900   150>  // Key 22: I
+            , <1000   150>  // Key 23: O
+            , <1100   150>  // Key 24: P
+            , <1200   150>  // Key 25: [
+            , <1300   150>  // Key 26: ]
+            , <1425   150>  // Key 27: Backslash
+            , <  88   250>  // Key 28: Caps
+            , < 225   250>  // Key 29: A
+            , < 325   250>  // Key 30: S
+            , < 425   250>  // Key 31: D
+            , < 525   250>  // Key 32: F
+            , < 625   250>  // Key 33: G
+            , < 725   250>  // Key 34: H
+            , < 825   250>  // Key 35: J
+            , < 925   250>  // Key 36: K
+            , <1025   250>  // Key 37: L
+            , <1125   250>  // Key 38: ;
+            , <1225   250>  // Key 39: '
+            , <1388   250>  // Key 40: Enter
+            , < 113   350>  // Key 41: LShift
+            , < 275   350>  // Key 42: Z
+            , < 375   350>  // Key 43: X
+            , < 475   350>  // Key 44: C
+            , < 575   350>  // Key 45: V
+            , < 675   350>  // Key 46: B
+            , < 775   350>  // Key 47: N
+            , < 875   350>  // Key 48: M
+            , < 975   350>  // Key 49: ,
+            , <1075   350>  // Key 50: .
+            , <1175   350>  // Key 51: /
+            , <1363   350>  // Key 52: RShift
+            , <  63   450>  // Key 53: LCtrl
+            , < 188   450>  // Key 54: Win
+            , < 313   450>  // Key 55: Alt
+            , < 688   450>  // Key 56: Space
+            , <1063   450>  // Key 57: RAlt
+            , <1188   450>  // Key 58: Fn
+            , <1313   450>  // Key 59: GUI
+            , <1438   450>  // Key 60: RCtrl
+            ;
+    };
+
+    underglow-layer {
+        compatible = "zmk,underglow-layer";
+        transform = <&rgb_transform>;
+
+        default_rgb {
+            layer-id = <LAYER_Base>;
+            bindings = <
+&ug ___       &ug ___ &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___       &ug ___
+&ug ___       &ug ___ &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___       &ug ___
+&ug_cl ___ ___   &ug ___ &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___
+&ug ___               &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___    &ug ___                  &ug ___
+&ug ___       &ug ___ &ug ___                          &ug ___                          &ug ___    &ug ___    &ug ___               &ug ___
+            >;
+        };
+
+        function_rgb {
+            layer-id = <LAYER_Function>;
+            bindings = <
+&ug ORANGE    &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug ORANGE &ug RED
+&ug BLACK     &ug BLACK  &ug GREEN  &ug BLACK  &ug RED    &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLUE   &ug BLUE   &ug BLUE   &ug GOLD
+&ug BLACK     &ug GREEN  &ug GREEN  &ug GREEN  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLUE   &ug BLUE              &ug BLACK
+&ug BLACK                 &ug PURPLE &ug GOLD   &ug BLACK  &ug BLACK  &ug BLUE   &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK               &ug BLACK
+&ug BLACK     &ug BLACK  &ug BLACK                         &ug BLACK                         &ug BLACK  &ug BLACK  &ug BLACK               &ug BLACK
+            >;
+        };
+
+        bluetooth_rgb {
+            layer-id = <LAYER_Bluetooth>;
+            bindings = <
+&ug BLACK     &ug BLUE  &ug BLUE  &ug BLUE  &ug BLUE  &ug BLUE  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK     &ug RED
+&ug_conn ___ ___  &ug BLACK &ug BLACK &ug BLACK &ug RED   &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK     &ug BLACK
+&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug ORANGE
+&ug BLACK                 &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
+&ug BLACK     &ug BLACK &ug BLACK                      &ug BLACK                      &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
+            >;
+        };
+
+        rgb_rgb {
+            layer-id = <LAYER_RGB>;
+            bindings = <
+&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK  &ug BLACK     &ug BLACK
+&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug PURPLE &ug ORANGE &ug PURPLE &ug ORANGE &ug GREEN  &ug GREEN     &ug BLACK
+&ug BLACK     &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK  &ug PURPLE &ug ORANGE &ug PURPLE &ug ORANGE &ug BLACK               &ug BLACK
+&ug BLACK                 &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
+&ug BLACK     &ug BLACK &ug BLACK                      &ug BLACK                       &ug BLACK &ug BLACK &ug BLACK               &ug BLACK
+            >;
+        };
+    };
+};
