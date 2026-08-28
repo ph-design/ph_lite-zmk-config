@@ -6,7 +6,6 @@
 
 #include "PH60-SC_V2.dtsi"
 #include <dt-bindings/led/led.h>
-#include <dt-bindings/sensor/lis2dh.h>
 
 / {
 	chosen {
@@ -63,8 +62,6 @@
 		reg = <0x19>;
 		irq-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>,
 				 <&gpio1 15 GPIO_ACTIVE_HIGH>;
-		int1-gpio-config = <LIS2DH_DT_GPIO_INT_EDGE_RISING>;
-		int2-gpio-config = <LIS2DH_DT_GPIO_INT_LEVEL_HIGH>;
 		wakeup-source;
 	};
 };
