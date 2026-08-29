@@ -32,6 +32,18 @@ include:
     artifact-name: PH60-SC_V2_Release_unsafe
 
   - board: ph_lite
+    shield: PH60-SC_V2_EVO
+    snippet: studio-rpc-usb-uart
+    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=y
+    artifact-name: PH60-SC_V2_EVO_Release
+
+  - board: ph_lite
+    shield: PH60-SC_V2_EVO
+    snippet: studio-rpc-usb-uart
+    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
+    artifact-name: PH60-SC_V2_EVO_Release_unsafe
+
+  - board: ph_lite
     shield: PH60-Multi_V2
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=y
