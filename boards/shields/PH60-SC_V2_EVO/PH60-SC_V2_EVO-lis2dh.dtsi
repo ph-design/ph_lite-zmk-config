@@ -44,7 +44,7 @@
         pinctrl-names = "default", "sleep";
 
         lis2dh: lis2dh@19 {
-                compatible = "st,lis2dh12", "st,lis2dh";
+                compatible = "zmk,lis2dh12", "zmk,lis2dh";
                 reg = <0x19>;
                 irq-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>, <&gpio1 15 GPIO_ACTIVE_HIGH>;
                 // 6D movement: gravity-zone based, immune to HPF reference offset
