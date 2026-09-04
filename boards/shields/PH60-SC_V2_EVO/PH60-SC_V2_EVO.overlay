@@ -39,7 +39,7 @@
 		spi-max-frequency = <4000000>;
 
 		/* WS2812 */
-		chain-length = <61>; /* 61 keys, each with one RGB LED */
+		chain-length = <62>; /* 62 keys, each with one RGB LED */
 		spi-one-frame = <0x70>;
 		spi-zero-frame = <0x40>;
 		color-mapping = <LED_COLOR_ID_GREEN
