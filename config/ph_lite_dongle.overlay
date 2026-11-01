@@ -1,0 +1,9 @@
+/*
+ * USB CDC ACM used by the 2.4G dongle AT command interface.
+ */
+
+&zephyr_udc0 {
+    cdc_acm_uart0: cdc_acm_uart0 {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};

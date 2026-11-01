@@ -1,0 +1,3 @@
+zephyr_library()
+zephyr_include_directories(${APPLICATION_SOURCE_DIR}/include)
+zephyr_library_sources_ifdef(CONFIG_PH_LITE_DONGLE_AT_CMD src/ph_lite_dongle_at.c)
