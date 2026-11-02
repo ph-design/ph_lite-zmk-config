@@ -193,8 +193,9 @@ static void at_command_work_handler(struct k_work *work) {
                 if (err < 0) {
                     at_write("\r\nERROR RADIO\r\n");
                 } else {
-                    at_write("\r\nOK\r\n");
+                    at_write("\r\n");
                     at_write_2g4_status();
+                    at_write("OK\r\n");
                 }
             }
         }
@@ -222,8 +223,9 @@ static void at_command_work_handler(struct k_work *work) {
                 if (err < 0) {
                     at_write("\r\nERROR RADIO\r\n");
                 } else {
-                    at_write("\r\nOK\r\n");
+                    at_write("\r\n");
                     at_write_2g4_status();
+                    at_write("OK\r\n");
                 }
             }
         }
@@ -244,8 +246,9 @@ static void at_command_work_handler(struct k_work *work) {
             if (err < 0) {
                 at_write("\r\nERROR RADIO\r\n");
             } else {
-                at_write("\r\nOK\r\n");
+                at_write("\r\n");
                 at_write_2g4_status();
+                at_write("OK\r\n");
             }
         }
     } else if (command_is(command, "AT+2G4?")) {
