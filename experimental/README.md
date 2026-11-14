@@ -4,4 +4,6 @@
 
 `studio-2g4/` contains the pinned EVO-side ZMK/config patches, protocol extension and source snapshots. These patches target their documented baseline, not an arbitrary current ZMK checkout.
 
+`motion-guard/` adds EVO Motion Guard preview.5 after the Studio patch kit: immediate carry locking, stable-placement confirmation, buffered landing keys, encrypted lock telemetry and five versioned settings exposed by ZMKs.
+
 This package does not change the default keyboard builds. Hardware validation and remaining limitations are documented in `wireless-hub/VALIDATION.md`.

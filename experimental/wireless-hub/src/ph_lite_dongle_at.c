@@ -26,7 +26,7 @@
 
 #define AT_UART_NODE DT_NODELABEL(cdc_acm_uart0)
 #define AT_LINE_MAX 96
-#define ZMK_2G4_DONGLE_AT_VERSION "ph_lite_dongle 0.6.5-hid-resume"
+#define ZMK_2G4_DONGLE_AT_VERSION "ph_lite_dongle 0.6.7-motion-breath"
 
 BUILD_ASSERT(DT_NODE_HAS_STATUS(AT_UART_NODE, okay), "cdc_acm_uart0 must be enabled");
 

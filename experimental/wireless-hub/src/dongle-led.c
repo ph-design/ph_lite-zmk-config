@@ -8,6 +8,8 @@
 #include "led-control.h"
 #include "led-config.h"
 #include "led-pattern.h"
+#include "led-link.h"
+#include "led-motion.h"
 #include "hub-peer.h"
 
 static const struct pwm_dt_spec led = PWM_DT_SPEC_GET(DT_NODELABEL(dongle_status_led));
@@ -17,6 +19,7 @@ static struct k_work_delayable led_work;
 static int64_t identify_until;
 static bool low;
 static int previous_threshold = 20;
+static struct led_link_state link_state;
 static int settings_set(const char *name, size_t len, settings_read_cb read, void *arg) {
     if (strcmp(name,"config")) return -ENOENT;
     uint8_t data[6];
@@ -62,8 +65,24 @@ static void update_led(struct k_work *work) {
     bool on = c.mode==1 || (c.mode==0 && dongle_led_on((uint32_t)((now%c.period)*2000/c.period),connected,percent,low));
     // Identification remains visible even when the user configured off/zero brightness.
     bool identify = now < until;
+    uint8_t mask = (hub_keyboard_connected(0) ? 1 : 0) |
+                   (hub_keyboard_connected(1) ? 2 : 0);
+    uint8_t locked = (hub_keyboard_motion(0)==MOTION_LOCKED ? 1 : 0) |
+                     (hub_keyboard_motion(1)==MOTION_LOCKED ? 2 : 0);
+    enum led_motion_mode motion_mode = led_motion_select(mask,locked);
+    bool link_on;
+    bool link_event = led_link_update(&link_state, (uint32_t)now, mask,
+                        c.mode != 2 && c.brightness > 0, identify, &link_on);
+    if (link_event) {
+        on = link_on;
+    }
     if (identify) on = now%250 < 125;
     uint32_t duty = identify ? 100 : c.brightness;
+    /* Identify, connection edges and low-battery warning keep priority. */
+    if (c.mode==0 && !identify && !link_event && !low && motion_mode!=LED_MOTION_NORMAL) {
+        on = true;
+        duty = c.brightness * led_motion_level(motion_mode,(uint32_t)now)/100;
+    }
     pwm_set_dt(&led,led.period,on ? led.period*duty/100 : 0);
     k_work_reschedule(&led_work,K_MSEC(25));
 }

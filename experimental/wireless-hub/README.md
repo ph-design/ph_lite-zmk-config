@@ -1,4 +1,4 @@
-# Dual-keyboard ESB / BLE HID Hub 0.6.5
+# Dual-keyboard ESB / BLE HID Hub 0.6.7
 
 Standalone NCS application for Pro Micro / SuperMini nRF52840 with a compatible nice!nano UF2 bootloader. Two independently paired EVO keyboards share one RF channel; a BLE HID mouse connects through MPSL radio timeslots. This is a prototype, not a Bluetooth HCI adapter.
 
@@ -46,7 +46,7 @@ cc -std=c11 -Wall -Wextra -Werror -Isrc -Itinycrypt/include \
 
 ZMKS provides receiver LED controls, BLE mouse scan/connect/forget and two keyboard slots. Pair each keyboard over USB and physically unlock Studio. The second keyboard needs the channel-setting RPC extension in `../studio-2g4/` so both peers can use the same RF channel with distinct keys and addresses.
 
-To manage over radio, choose keyboard 1 or 2 in ZMKS and select the receiver's Studio interface. The keyboard stays on battery. Only one keyboard can be managed at a time; both can send input concurrently. Fn+backslash physically unlocks the selected EVO.
+To manage over radio, connect the receiver management interface in ZMKs first, then select an online keyboard to open its Studio interface. The keyboard stays on battery. Only one keyboard can be managed at a time; both can send input concurrently. Fn+backslash physically unlocks the selected EVO.
 
 Studio CDC baud 115200 selects slot 0, 230400 selects slot 1. Slot 1 emits `HUB_TARGET=1\r\n` before binary RPC; clients must confirm this before sending requests. Slot 0 keeps the legacy binary-only stream. Slot mutation is refused while a Studio session is open.
 
@@ -75,3 +75,20 @@ Fault diagnostics are RAM only. AT+INFO reports HUB_FAULT, HUB_ASSERT_FILE, HUB_
 See `VALIDATION.md`. Long-duration stability, crowded RF latency, USB sleep/resume, other mouse models and other EIO/PHD keyboards remain unverified. This application does not forward PC keyboard lock LEDs and does not implement USB boot keyboard or remote wakeup.
 
 TinyCrypt files retain Intel's BSD license notices. The ESB SDK patch is against Nordic's licensed SDK source; use the pinned SDK's license terms.
+
+## Link and lift-lock indication (0.6.6 / 0.6.7)
+
+AUTO mode adds two short 100 ms flashes on connect and two longer 300 ms flashes on disconnect. Per-peer encrypted motion status is reported as `HUB_MOTION=<0|1>,READY|LOCKED|UNKNOWN`; legacy packets, disconnect, startup and status older than 1250 ms resolve to UNKNOWN. Use EVO Motion Guard preview.4 or later for telemetry; preview.5 adds adjustable settings and remains wire compatible.
+
+Only connected keyboards contribute to the persistent light pattern: none connected keeps waiting blink; no known locked peer keeps normal status; some locked gives shallow 65–100% breathing; all connected peers known locked gives full 5–100% breathing. Unknown is never counted as locked. Breathing has a fixed 2.4 s cycle, scaled by brightness. Identification, link-event flashes and low-battery alerts take priority. Mouse state does not enter the lock mask. Firmware keeps existing low-battery hysteresis.
+
+Additional host checks:
+
+```sh
+cc -std=c11 -Wall -Wextra -Werror -Isrc tests/test-led-link.c -o /tmp/test-led-link
+/tmp/test-led-link
+cc -std=c11 -Wall -Wextra -Werror -Isrc tests/test-led-motion.c -o /tmp/test-led-motion
+/tmp/test-led-motion
+```
+
+`AT+BL` makes the USB-attached receiver enumerate its bootloader disk. It does not expose a battery-powered keyboard as a USB drive across the radio connection.

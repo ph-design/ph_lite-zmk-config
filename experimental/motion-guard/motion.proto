@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package zmk.motion;
+
+import "keymap.proto";
+
+message Request {
+    oneof request_type {
+        bool           get_capabilities      = 1;
+        bool           get_tap_config        = 2;
+        TapConfig      set_tap_config        = 3;
+        bool           get_carry_config      = 4;
+        CarryConfig    set_carry_config      = 5;
+        bool           save_state            = 6;
+        bool           set_live_stream       = 7;
+        bool           get_still_wake_config = 8;
+        StillWakeConfig set_still_wake_config = 9;
+        bool           get_sleep_wake_config = 10;
+        SleepWakeConfig set_sleep_wake_config = 11;
+    }
+}
+
+message Response {
+    oneof response_type {
+        Capabilities  capabilities           = 1;
+        TapConfig     tap_config             = 2;
+        bool          set_tap_config         = 3;
+        CarryConfig   carry_config           = 4;
+        bool          set_carry_config       = 5;
+        bool          save_state             = 6;
+        bool          set_live_stream        = 7;
+        StillWakeConfig still_wake_config    = 8;
+        bool          set_still_wake_config  = 9;
+        SleepWakeConfig sleep_wake_config    = 10;
+        bool          set_sleep_wake_config  = 11;
+    }
+}
+
+message Capabilities {
+    string sensor              = 1;  // "lis2dh12"
+    bool   supports_tap        = 2;
+    bool   supports_double_tap = 3;
+    bool   supports_carry      = 4;
+    uint32 threshold_max       = 5;
+    bool   supports_still_wake = 6;
+    bool   supports_sleep_wake = 7;
+    uint32 guard_version = 8; // 1: explicit configurable Motion Guard
+}
+
+// Any binding may be omitted. When a single and its double are both set on
+// the same side, the single fires one window late so the double can supersede.
+message TapConfig {
+    bool   enabled       = 1;
+    uint32 threshold     = 2;  // CLICK_THS, shared by all taps
+    uint32 time_limit_ms = 3;  // TIME_LIMIT
+    uint32 latency_ms    = 4;  // TIME_LATENCY
+    uint32 window_ms     = 5;  // TIME_WINDOW — second-tap / arbitration window
+    zmk.keymap.BehaviorBinding left_single_binding  = 6;
+    zmk.keymap.BehaviorBinding left_double_binding  = 7;
+    zmk.keymap.BehaviorBinding right_single_binding = 8;
+    zmk.keymap.BehaviorBinding right_double_binding = 9;
+    uint32 layer_mask    = 10;  // 0 = all layers
+}
+
+message CarryConfig {
+    bool   enabled            = 1;
+    uint32 motion_threshold   = 2;  // INT_THS for the any-motion interrupt
+    uint32 motion_duration_ms = 3;  // legacy; unchanged
+    uint32 carried_settle_ms = 4;
+    uint32 brief_settle_ms = 5;
+    uint32 stable_span_mg = 6;
+    uint32 departure_mg = 7;
+    uint32 verify_ms = 8;
+}
+
+// Keeps the keyboard awake once it has been set down: after a motion wake-up,
+// the sensor must stay still for this long or the keyboard goes straight back
+// to sleep. Settling is judged by the same any-motion streak falling silent.
+message StillWakeConfig {
+    bool   enabled             = 1;
+    uint32 settle_duration_ms  = 2;  // stillness required to stay awake
+}
+
+// Hardware sleep-to-wake: the sensor itself drops to its 10 Hz low-power ODR
+// once acceleration stays below the threshold for the full duration, and
+// returns to the configured ODR on the first motion above the threshold.
+message SleepWakeConfig {
+    bool   enabled      = 1;
+    uint32 threshold    = 2;  // ACT_THS, 16 mg per count at ±2 g
+    uint32 duration_ms  = 3;  // stillness required before the ODR drops
+}
+
+enum Orientation {
+    ORIENTATION_UNKNOWN   = 0;
+    ORIENTATION_FLAT_UP   = 1;
+    ORIENTATION_FLAT_DOWN = 2;
+    ORIENTATION_TILTED    = 3;
+}
+
+message LiveState {
+    // Peak acceleration within the push period, in the same raw counts the
+    // threshold fields use, so a threshold marker can be drawn on the meter.
+    uint32      magnitude      = 1;
+    Orientation orientation    = 2;
+    bool        carry_active   = 3;  // walking detected, sleep imminent
+    bool        tap_detected   = 4;
+    uint32      last_click_src = 5;  // raw CLICK_SRC of the last tap
+}
+
+message Notification {
+    oneof notification_type {
+        LiveState live_state = 1;
+    }
+}

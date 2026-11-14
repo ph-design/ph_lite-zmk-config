@@ -12,7 +12,7 @@
 #include "diagnostics.h"
 #include <string.h>
 K_MSGQ_DEFINE(radio_packets,sizeof(struct esb_payload),32,4);
-struct keyboard_status { atomic_t rx,fail,drop,connected,last_packet,battery,last_battery; };
+struct keyboard_status { atomic_t rx,fail,drop,connected,last_packet,battery,last_battery,motion,last_motion; };
 static struct keyboard_status status[HUB_PEERS];
 static struct input_merge input;
 static atomic_t release_mask;
@@ -34,6 +34,11 @@ static void esb_event(const struct esb_evt *evt) {
     }
 }
 bool hub_keyboard_connected(unsigned i){return i<HUB_PEERS && atomic_get(&status[i].connected);}
+enum motion_status hub_keyboard_motion(unsigned i) {
+    if(i>=HUB_PEERS)return MOTION_UNKNOWN;
+    return motion_status_fresh(atomic_get(&status[i].motion),
+        k_uptime_get_32()-(uint32_t)atomic_get(&status[i].last_motion),hub_keyboard_connected(i));
+}
 int hub_keyboard_battery(unsigned i) {
     return hub_keyboard_connected(i) && k_uptime_get_32()-(uint32_t)atomic_get(&status[i].last_battery)<2000?atomic_get(&status[i].battery):-1;
 }
@@ -90,6 +95,7 @@ static void send_keyboard(void){uint8_t out[15];merge_keyboard(&input,out);hub_u
 static void send_consumer(void){uint8_t out[24];merge_consumer(&input,out);hub_usb_report(2,out,24);}
 static void release(unsigned slot) {
     atomic_clear(&status[slot].connected);atomic_set(&status[slot].battery,-1);
+    atomic_set(&status[slot].motion,MOTION_UNKNOWN);
     memset(input.keyboard[slot],0,15);memset(input.consumer[slot],0,12);
     send_keyboard();send_consumer();hub_mouse_release(slot);
 }
@@ -100,6 +106,7 @@ static void packet(struct esb_payload *p) {
     if(n<1){if(n!=-EACCES)atomic_inc(&s->fail);return;}
     atomic_set(&s->connected,1);atomic_set(&s->last_packet,k_uptime_get_32());
     switch(p->data[0]) {
+    case 0x05:atomic_set(&s->motion,MOTION_UNKNOWN);break;
     case 0x40:studio_radio_received_from(slot,p->data,n);break;
     case 1:if(n==16){memcpy(input.keyboard[slot],p->data+1,15);send_keyboard();}break;
     case 2:if(n==13){memcpy(input.consumer[slot],p->data+1,12);send_consumer();}break;
@@ -109,8 +116,10 @@ static void packet(struct esb_payload *p) {
             .wheel=(int16_t)sys_get_le16(p->data+6),.pan=(int16_t)sys_get_le16(p->data+8)};
         hub_mouse_event(slot,&e);
         }break;
-    case 0xfe:atomic_set(&s->battery,n==2 && p->data[1]<=100?p->data[1]:-1);
-        atomic_set(&s->last_battery,k_uptime_get_32());break;
+    case 0xfe:atomic_set(&s->battery,n>=2 && p->data[1]<=100?p->data[1]:-1);
+        atomic_set(&s->last_battery,k_uptime_get_32());
+        atomic_set(&s->last_motion,k_uptime_get_32());
+        atomic_set(&s->motion,motion_status_decode(p->data,n));break;
     }
 }
 void hub_radio_run(void) {

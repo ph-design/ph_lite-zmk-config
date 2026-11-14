@@ -17,3 +17,7 @@
 第二把 EVO 额外使用本目录 `pairing.proto` 与 `pairing_subsystem.c`：替换 Studio 消息仓库 `proto/zmk/pairing.proto` 和 ZMK `app/src/studio/pairing_subsystem.c`，重新生成 protobuf 并编译。扩展增加 field 4 `set_channel`，用于生成独立配对后把两把键盘设置到同一合法频道；不改变无线管理帧。它仍受 Studio 物理解锁保护。旧核心 patch 不包含该频道扩展，必须单独应用这些快照。
 
 第一把保留原无线 Studio 固件与配对；第二把已构建并刷入此扩展。不要在其他 ZMK 基线上盲目应用补丁；先核对版本与差异。实机验证与限制见 `../wireless-hub/VALIDATION.md`。
+
+## 拿起锁定与状态回传
+
+使用相邻 `../motion-guard/` 的 preview.5 叠加包。先应用本目录的核心、配置及频道扩展，再应用拿起锁定补丁；不要把旧 `2g4.c` 快照覆盖到叠加后的源码。最终接收器为 Hub 0.6.7，键盘状态通过加密心跳中的 A1 扩展回传，旧心跳兼容但状态为 UNKNOWN。

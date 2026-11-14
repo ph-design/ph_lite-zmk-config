@@ -1,5 +1,6 @@
 #pragma once
 #include <zmk/2g4_crypto.h>
+#include "motion-telemetry.h"
 #define HUB_PEERS 2
 unsigned hub_peer_target(void);
 int hub_peer_select(unsigned slot);
@@ -19,6 +20,7 @@ void hub_peer_status(char *out,size_t size);
 bool hub_any_keyboard_connected(void);
 int hub_lowest_battery(void);
 bool hub_keyboard_connected(unsigned slot);
+enum motion_status hub_keyboard_motion(unsigned slot);
 int hub_keyboard_battery(unsigned slot);
 void hub_keyboard_stats(unsigned slot,uint32_t *rx,uint32_t *fail,uint32_t *drop);
 bool studio_radio_busy(void);

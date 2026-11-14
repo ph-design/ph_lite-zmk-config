@@ -156,5 +156,10 @@ void hub_peer_status(char *out,size_t size) {
             i,hub_peer_enabled(i),hub_peer_paired(i),hub_keyboard_connected(i),hub_keyboard_battery(i),hub_peer_key_id(i),
             a.base[0],a.base[1],a.base[2],a.base[3],a.prefix,a.rf_channel,rx,fail,drop);
         used+=MIN(n,size-used-1);
+        if(used<size) {
+            n=snprintk(out+used,size-used,"HUB_MOTION=%u,%s\r\n",i,
+                       motion_status_name(hub_keyboard_motion(i)));
+            used+=MIN(n,size-used-1);
+        }
     }
 }
