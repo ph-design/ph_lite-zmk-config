@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package zmk.pairing;
+
+message GetPairStateRequest {}
+
+message GetPairStateResponse {
+    bool uses_factory_key = 1;
+    uint32 key_id = 2;
+    bool addr_paired = 3;
+    bytes rf_addr = 4;
+    uint32 rf_channel = 5;
+}
+
+message GenerateAndPairRequest {}
+
+message GenerateAndPairResponse {
+    uint32 key_id = 1;
+    bytes key = 2;
+    bytes rf_addr = 3;
+    uint32 rf_channel = 4;
+}
+
+message SetChannelRequest { uint32 channel = 1; }
+message SetChannelResponse { uint32 channel = 1; }
+
+message ClearPairingRequest {}
+
+message ClearPairingResponse {}
+
+message Request {
+    oneof request_type {
+        GetPairStateRequest get_pair_state = 1;
+        GenerateAndPairRequest generate_and_pair = 2;
+        ClearPairingRequest clear_pairing = 3;
+        SetChannelRequest set_channel = 4;
+    }
+}
+
+message Response {
+    oneof response_type {
+        GetPairStateResponse get_pair_state = 1;
+        GenerateAndPairResponse generate_and_pair = 2;
+        ClearPairingResponse clear_pairing = 3;
+        SetChannelResponse set_channel = 4;
+    }
+}

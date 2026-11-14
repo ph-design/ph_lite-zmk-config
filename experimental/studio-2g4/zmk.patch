@@ -1,0 +1,257 @@
+diff --git a/app/include/zmk/2g4.h b/app/include/zmk/2g4.h
+index 8858cdd..87a7299 100644
+--- a/app/include/zmk/2g4.h
++++ b/app/include/zmk/2g4.h
+@@ -19,4 +19,6 @@ int zmk_2g4_start(void);
+ int zmk_2g4_stop(void);
+ bool zmk_2g4_dongle_kb_connected(void);
+ void zmk_2g4_dongle_rx_stats(uint32_t *rx_total, uint32_t *decrypt_fail);
++// Returns 0..100, or -1 when disconnected/unknown/stale.
++int zmk_2g4_dongle_battery_percent(void);
+ int zmk_2g4_dongle_start(void);
+diff --git a/app/include/zmk/battery.h b/app/include/zmk/battery.h
+index edc8fd7..8d42b9a 100644
+--- a/app/include/zmk/battery.h
++++ b/app/include/zmk/battery.h
+@@ -5,5 +5,7 @@
+  */
+ 
+ #pragma once
++#include <stdbool.h>
++bool zmk_battery_is_valid(void);
+ 
+ uint8_t zmk_battery_state_of_charge(void);
+diff --git a/app/module/drivers/esb/esb.c b/app/module/drivers/esb/esb.c
+index 5705dd9..2fea02a 100644
+--- a/app/module/drivers/esb/esb.c
++++ b/app/module/drivers/esb/esb.c
+@@ -30,8 +30,8 @@ LOG_MODULE_REGISTER(zmk_esb, CONFIG_ZMK_ESB_LOG_LEVEL);
+ 
+ #define ESB_USE_FAST_RAMP_UP 1
+ 
+-#define ACK_TIMEOUT_2MBPS 150
+-#define ACK_TIMEOUT_1MBPS 300
++#define ACK_TIMEOUT_2MBPS 350
++#define ACK_TIMEOUT_1MBPS 600
+ 
+ #define ESB_TIMER_IRQ_PRIO 2
+ #define ESB_RADIO_IRQ_PRIO 1
+@@ -800,8 +800,10 @@ int zmk_esb_write_payload(const struct zmk_esb_payload *payload) {
+         }
+         irq_unlock(key);
+     } else {
++        unsigned int key = irq_lock();
+         memcpy(&ack_pl[payload->pipe], payload, sizeof(struct zmk_esb_payload));
+         ack_pl_pending[payload->pipe] = true;
++        irq_unlock(key);
+     }
+ 
+     return 0;
+diff --git a/app/src/2g4.c b/app/src/2g4.c
+index 48b7543..2292429 100644
+--- a/app/src/2g4.c
++++ b/app/src/2g4.c
+@@ -15,6 +15,8 @@
+ #include <zmk/2g4.h>
+ #include <zmk/2g4_protocol.h>
+ #include <zmk/2g4_crypto.h>
++#include "studio-radio.h"
++#include <zmk/battery.h>
+ 
+ #include <zephyr/logging/log.h>
+ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
+@@ -49,9 +51,12 @@ static void keepalive_handler(struct k_work *work) {
+     tx_payload.pipe = 0;
+     tx_payload.noack = false;
+     tx_payload.data[0] = ZMK_2G4_MSG_KEEP_ALIVE;
++    // Optional keepalive extension: battery percent, 255 = not sampled.
++    // Legacy receivers ignore this body; no extra radio packets are sent.
++    tx_payload.data[1] = zmk_battery_is_valid() ? zmk_battery_state_of_charge() : 255;
+ 
+     int enc_len =
+-        zmk_2g4_crypto_encrypt(tx_payload.data, 1, CONFIG_ZMK_ESB_MAX_PAYLOAD_LENGTH);
++        zmk_2g4_crypto_encrypt(tx_payload.data, 2, CONFIG_ZMK_ESB_MAX_PAYLOAD_LENGTH);
+     if (enc_len < 0) {
+         k_work_reschedule(&keepalive_work, K_MSEC(ZMK_2G4_KEEPALIVE_MS));
+         return;
+@@ -79,6 +84,8 @@ static void esb_event_handler(const struct zmk_esb_event *event) {
+     case ZMK_ESB_EVENT_RX_RECEIVED: {
+         struct zmk_esb_payload rx;
+         while (zmk_esb_read_rx_payload(&rx) == 0) {
++            int len = zmk_2g4_crypto_decrypt(rx.data,rx.length);
++            if (len > 0) studio_radio_received(rx.data,len);
+         }
+         break;
+     }
+@@ -201,6 +208,7 @@ int zmk_2g4_start(void) {
+             addr.rf_channel);
+ 
+     zmk_2g4_crypto_session_start();
++    studio_radio_started();
+     send_boot_announcement();
+ 
+     k_work_reschedule(&keepalive_work, K_MSEC(ZMK_2G4_KEEPALIVE_MS));
+diff --git a/app/src/2g4_crypto.c b/app/src/2g4_crypto.c
+index f13a57d..0213f23 100644
+--- a/app/src/2g4_crypto.c
++++ b/app/src/2g4_crypto.c
+@@ -27,7 +27,13 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
+ #define MIC_SIZE 4
+ #define OVERHEAD (HEADER_SIZE + MIC_SIZE)
+ 
+-#define CCM_DIR_DATA 1
++#if IS_ENABLED(CONFIG_ZMK_2G4_DONGLE)
++#define CCM_DIR_TX 0
++#define CCM_DIR_RX 1
++#else
++#define CCM_DIR_TX 1
++#define CCM_DIR_RX 0
++#endif
+ #define CCM_PDU_HDR 3
+ #define CCM_MAX_PAYLOAD 23
+ #define CCM_SCRATCH_SIZE 43
+@@ -187,10 +193,10 @@ static bool ccm_self_test(void) {
+     uint8_t out[8];
+     bool ok = false;
+ 
+-    if (ccm_encrypt_payload(tk, 0x12345678u, 1u, CCM_DIR_DATA, pt, sizeof(pt), ct_mic)) {
++    if (ccm_encrypt_payload(tk, 0x12345678u, 1u, 1u, pt, sizeof(pt), ct_mic)) {
+         return false;
+     }
+-    if (ccm_decrypt_payload(tk, 0x12345678u, 1u, CCM_DIR_DATA, ct_mic, sizeof(pt), out, &ok)) {
++    if (ccm_decrypt_payload(tk, 0x12345678u, 1u, 1u, ct_mic, sizeof(pt), out, &ok)) {
+         return false;
+     }
+     if (!ok || memcmp(out, pt, sizeof(pt)) != 0) {
+@@ -198,7 +204,7 @@ static bool ccm_self_test(void) {
+     }
+ 
+     ct_mic[0] ^= 0x01;
+-    if (ccm_decrypt_payload(tk, 0x12345678u, 1u, CCM_DIR_DATA, ct_mic, sizeof(pt), out, &ok)) {
++    if (ccm_decrypt_payload(tk, 0x12345678u, 1u, 1u, ct_mic, sizeof(pt), out, &ok)) {
+         return false;
+     }
+     if (ok) {
+@@ -443,7 +449,7 @@ int zmk_2g4_crypto_encrypt(uint8_t *data, size_t len, size_t buf_size) {
+ 
+     uint8_t ct_mic[CCM_MAX_PAYLOAD + MIC_SIZE];
+ 
+-    int ret = ccm_encrypt_payload(aes_key, tx_session_id, ctr, CCM_DIR_DATA, data, len, ct_mic);
++    int ret = ccm_encrypt_payload(aes_key, tx_session_id, ctr, CCM_DIR_TX, data, len, ct_mic);
+     if (ret) {
+         return ret;
+     }
+@@ -493,7 +499,7 @@ int zmk_2g4_crypto_decrypt(uint8_t *data, size_t len) {
+ 
+     uint8_t pt[CCM_MAX_PAYLOAD];
+     bool mic_ok = false;
+-    int ret = ccm_decrypt_payload(aes_key, session_id, ctr, CCM_DIR_DATA, data + HEADER_SIZE,
++    int ret = ccm_decrypt_payload(aes_key, session_id, ctr, CCM_DIR_RX, data + HEADER_SIZE,
+                                   ct_len, pt, &mic_ok);
+     if (ret) {
+         return ret;
+diff --git a/app/src/2g4_dongle.c b/app/src/2g4_dongle.c
+index 7a94f10..f63867d 100644
+--- a/app/src/2g4_dongle.c
++++ b/app/src/2g4_dongle.c
+@@ -8,6 +8,8 @@
+ #include <zephyr/kernel.h>
+ #include <zephyr/sys/byteorder.h>
+ #include <string.h>
++#include <zephyr/sys/atomic.h>
++#include "studio-radio.h"
+ 
+ #include <zmk/esb.h>
+ #include <zmk/hid.h>
+@@ -33,6 +35,8 @@ static bool report_is_release(const uint8_t *body, size_t len) {
+ 
+ #define ZMK_2G4_KB_TIMEOUT_MS 500
+ 
++static atomic_t battery_percent = ATOMIC_INIT(-1);
++static atomic_t battery_updated_ms;
+ static bool kb_connected;
+ static bool rx_started;
+ static uint32_t rx_total;
+@@ -44,6 +48,7 @@ static void kb_lost_handler(struct k_work *work) {
+         return;
+     }
+     kb_connected = false;
++    atomic_set(&battery_percent, -1);
+     LOG_INF("2.4G keyboard lost (rx_total=%u, decrypt_fail=%u)", rx_total, rx_decrypt_fail);
+ 
+     if (zmk_usb_get_status() == USB_DC_SUSPEND) {
+@@ -93,6 +98,9 @@ static void process_rx_payload(const struct zmk_esb_payload *rx) {
+     bool usb_suspended = (zmk_usb_get_status() == USB_DC_SUSPEND);
+ 
+     switch (buf[0]) {
++    case 0x40:
++        studio_radio_received(buf,dec_len);
++        break;
+     case ZMK_2G4_MSG_KEYBOARD_REPORT: {
+         struct zmk_hid_keyboard_report *report = zmk_hid_get_keyboard_report();
+         if (dec_len != 1 + sizeof(report->body)) {
+@@ -157,6 +165,12 @@ static void process_rx_payload(const struct zmk_esb_payload *rx) {
+         break;
+     }
+     case ZMK_2G4_MSG_KEEP_ALIVE:
++        if (dec_len == 2 && buf[1] <= 100) {
++            atomic_set(&battery_updated_ms, (atomic_val_t)k_uptime_get_32());
++            atomic_set(&battery_percent, buf[1]);
++        } else {
++            atomic_set(&battery_percent, -1);
++        }
+         break;
+     default:
+         LOG_DBG("Unknown 2G4 message type: 0x%02x", buf[0]);
+@@ -208,6 +222,11 @@ ZMK_SUBSCRIPTION(zmk_2g4_dongle, zmk_hid_indicators_changed);
+ 
+ #endif /* CONFIG_ZMK_HID_INDICATORS */
+ 
++int zmk_2g4_dongle_battery_percent(void) {
++    uint32_t age = k_uptime_get_32() - (uint32_t)atomic_get(&battery_updated_ms);
++    return kb_connected && age < 2000 ? atomic_get(&battery_percent) : -1;
++}
++
+ bool zmk_2g4_dongle_kb_connected(void) { return kb_connected; }
+ 
+ void zmk_2g4_dongle_rx_stats(uint32_t *rx_total_out, uint32_t *decrypt_fail_out) {
+@@ -242,6 +261,7 @@ static int zmk_2g4_dongle_init(void) {
+ }
+ 
+ int zmk_2g4_dongle_start(void) {
++    atomic_set(&battery_percent, -1);
+     struct zmk_2g4_addr addr;
+ 
+     zmk_2g4_addr_get(&addr);
+@@ -256,6 +276,10 @@ int zmk_2g4_dongle_start(void) {
+     zmk_esb_set_prefixes(&addr.prefix, 1);
+     zmk_esb_set_rf_channel(addr.rf_channel);
+ 
++    int reserve = zmk_2g4_crypto_reserve_session_id();
++    if (reserve) return reserve;
++    zmk_2g4_crypto_session_start();
++    studio_radio_started();
+     int ret = zmk_esb_start_rx();
+     if (ret) {
+         LOG_ERR("ESB start RX failed: %d", ret);
+diff --git a/app/src/battery.c b/app/src/battery.c
+index 4500d4f..e107eef 100644
+--- a/app/src/battery.c
++++ b/app/src/battery.c
+@@ -27,6 +27,8 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
+ #endif
+ 
+ static uint8_t last_state_of_charge = 0;
++static bool battery_sample_valid;
++bool zmk_battery_is_valid(void) { return battery_sample_valid; }
+ 
+ #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW)
+ static bool rgb_off_by_low_bat = false;
+@@ -134,6 +136,7 @@ static int zmk_battery_update(const struct device *battery) {
+     }
+ #endif
+ 
++    battery_sample_valid = true;
+     if (last_state_of_charge != state_of_charge.val1) {
+         last_state_of_charge = state_of_charge.val1;
+ 
