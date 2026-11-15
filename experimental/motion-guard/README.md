@@ -27,7 +27,7 @@ The keymap is taken from the user's configuration. No private pairing record, de
 
 ## Behavior
 
-The guard runs before position events. Clear sideways/inverted poses lock immediately; ambiguous sustained departure uses the configured verification period. Normal READY/VERIFY key events stay on the direct path. Only new presses during stable placement are buffered, then replayed in order at a bounded rate; keys held in the bag cannot become fresh landing presses. A brief flat sample after continuous movement cannot unlock: the full per-axis window must remain stable. Sensor reads stay on a sampler thread; no I2C or flash write is introduced on a key event.
+The guard runs before position events. Coherent sideways/inverted poses take the fast lock path after sample confirmation; ambiguous sustained departure uses the configured verification period. Normal READY/VERIFY key events stay on the direct path. Only new presses during stable placement are buffered, then replayed in order at a bounded rate; keys held in the bag cannot become fresh landing presses. A brief flat sample after continuous movement cannot unlock: the full per-axis window must remain stable. Sensor reads stay on a sampler thread; no I2C or flash write is introduced on a key event.
 
 Idle power reduction remains enabled. Default automatic System OFF is disabled so the IMU and input path remain responsive. Preview.6 exposes independent standby/light timers and optional deep sleep; manual power-off remains available. A stale/unavailable sensor locks input until recovery or explicit disabling through Studio.
 
