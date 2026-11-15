@@ -17,3 +17,6 @@ void zmk_motion_guard_get_config(struct mg_config *config);
 int zmk_motion_guard_set_config(const struct mg_config *config);
 int zmk_motion_guard_save_config(void);
 int zmk_motion_guard_reset_config(void);
+
+void zmk_motion_guard_prepare_sleep(void);
+void zmk_motion_guard_resume_sampling(void);

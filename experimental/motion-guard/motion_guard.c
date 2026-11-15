@@ -12,6 +12,7 @@
 #include <zmk/endpoints.h>
 #include <zmk/events/position_state_changed.h>
 #include <zmk/motion_guard.h>
+#include <zmk/power.h>
 #if IS_ENABLED(CONFIG_ZMK_2G4)
 #include <zmk/2g4.h>
 #endif
@@ -66,6 +67,7 @@ struct sample_frame {
     uint32_t sequence;
     bool ok;
 };
+static K_MUTEX_DEFINE(sampler_mutex);
 static struct sample_frame latest;
 static struct k_spinlock frame_lock;
 static uint32_t processed_sequence;
@@ -113,6 +115,7 @@ static void synchronize(enum mg_state previous) {
 #if IS_ENABLED(CONFIG_ZMK_2G4)
         zmk_2g4_motion_state_changed();
 #endif
+        zmk_power_update();
         LOG_INF("guard %s", is_blocked ? "LOCK" : "READY");
         if (!is_blocked) { zmk_activity_motion_active(); }
     }
@@ -174,6 +177,8 @@ static void sampler_thread(void *a, void *b, void *c) {
     ARG_UNUSED(a); ARG_UNUSED(b); ARG_UNUSED(c);
     while (true) {
         if (atomic_get(&started)) {
+            k_mutex_lock(&sampler_mutex, K_FOREVER);
+            if (!atomic_get(&started)) { k_mutex_unlock(&sampler_mutex); continue; }
             struct sample_frame frame = {0};
             if (device_is_ready(imu)) {
                 frame.ok = sensor_sample_fetch_chan(imu, SENSOR_CHAN_ACCEL_XYZ) == 0 &&
@@ -185,9 +190,22 @@ static void sampler_thread(void *a, void *b, void *c) {
             latest = frame;
             k_spin_unlock(&frame_lock, key);
             k_work_schedule(&policy_work, K_NO_WAIT);
+            k_mutex_unlock(&sampler_mutex);
         }
         k_sleep(K_MSEC(10));
     }
+}
+void zmk_motion_guard_prepare_sleep(void) {
+    atomic_set(&started, 0);
+    /* Wait for the final in-flight bus read before device suspension. */
+    k_mutex_lock(&sampler_mutex, K_FOREVER);
+    k_mutex_unlock(&sampler_mutex);
+    k_work_cancel_delayable(&policy_work);
+    k_work_cancel_delayable(&drain_work);
+}
+void zmk_motion_guard_resume_sampling(void) {
+    atomic_set(&started, 1);
+    k_work_schedule(&policy_work, K_MSEC(10));
 }
 K_THREAD_DEFINE(motion_guard_sampler, 1536, sampler_thread, NULL, NULL, NULL, 8, 0, 0);
 bool zmk_motion_guard_blocks_output(void) { return atomic_get(&blocked); }
@@ -206,7 +224,7 @@ static int guard_init(void) {
         if (rc) { LOG_WRN("100Hz ODR request failed: %d", rc); }
     } else { LOG_ERR("IMU unavailable; disable carry in Studio to recover input"); }
     atomic_set(&started, 1);
-    LOG_INF("EVO Motion Guard preview.5: adjustable policy v1");
+    LOG_INF("EVO Motion Guard preview.6: runtime idle/light power settings");
     k_work_schedule(&policy_work, K_NO_WAIT);
     return 0;
 }

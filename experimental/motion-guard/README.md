@@ -1,6 +1,6 @@
-# EVO Motion Guard preview.5 · 拿起锁定
+# EVO Motion Guard preview.6 · 拿起锁定
 
-This is an optional overlay after `../studio-2g4/`, not a replacement for the default keyboard build. It combines the tested preview.4 policy / encrypted telemetry with additive, validated settings. No tap-detection algorithm, axis selection, trigger callback or ODR change is included in preview.5.
+This is an optional overlay after `../studio-2g4/`, not a replacement for the default keyboard build. It combines the tested preview.4 policy / encrypted telemetry with additive, validated settings. No tap-detection algorithm, axis selection, trigger callback or ODR change is included in preview.6.
 
 ## Fixed baselines and application order
 
@@ -29,7 +29,7 @@ The keymap is taken from the user's configuration. No private pairing record, de
 
 The guard runs before position events. Clear sideways/inverted poses lock immediately; ambiguous sustained departure uses the configured verification period. Normal READY/VERIFY key events stay on the direct path. Only new presses during stable placement are buffered, then replayed in order at a bounded rate; keys held in the bag cannot become fresh landing presses. A brief flat sample after continuous movement cannot unlock: the full per-axis window must remain stable. Sensor reads stay on a sampler thread; no I2C or flash write is introduced on a key event.
 
-Idle power reduction remains enabled. With a healthy enabled guard, automatic System OFF is suspended so the sensor can continue confirming pickup/placement; manual power-off remains available. Disabling the guard retains normal sleep behavior. A stale/unavailable sensor locks input until recovery or explicit disabling through Studio.
+Idle power reduction remains enabled. Default automatic System OFF is disabled so the IMU and input path remain responsive. Preview.6 exposes independent standby/light timers and optional deep sleep; manual power-off remains available. A stale/unavailable sensor locks input until recovery or explicit disabling through Studio.
 
 The encrypted existing keepalive adds `[FE,battery,A1,state]` (1 READY / 2 LOCKED), plus a deferred report after a state transition. Lost-link retry probes continue at 1 second so a locked keyboard can reconnect without a physical key event. Hub 0.6.7 aggregates the two peers independently.
 
@@ -49,4 +49,18 @@ Long confirmation must be at least brief confirmation. Stricter stability can de
 
 ## Validation
 
-The default 21 policy scenarios, 10000 bag cycles and 40000 typing-vibration taps pass with address/undefined sanitizers. Additional tests cover bounds, cross-field constraints and all five parameter effects. Host harnesses execute the real reset behavior and heartbeat sender. Fresh EVO compilation succeeds. Hardware flash/reboot parameter readback and changed-parameter input behavior remain to be tested by the user; no preview.5 device flash was performed. See sibling Hub VALIDATION.md for receiver hardware evidence and its limits.
+The default 21 policy scenarios, 10000 bag cycles and 40000 typing-vibration taps pass with address/undefined sanitizers. Additional tests cover bounds, cross-field constraints and all five parameter effects. Host harnesses execute the real reset behavior and heartbeat sender. Fresh EVO compilation succeeds. Hardware flash/reboot parameter readback and changed-parameter input behavior remain to be tested by the user; no preview.6 device flash was performed. See sibling Hub VALIDATION.md for receiver hardware evidence and its limits.
+
+## Runtime power settings (preview.6)
+
+The Device page in ZMKs exposes automatic standby (default 120 s), RGB suppression (30 s) and independent backlight suppression (30 s, shown only if built). Zero disables an individual timer. Timers use whole seconds up to 24 hours. The USB policy defaults to bypassing timed standby/light suppression. Lock-triggered light suppression is independent and defaults on. Manual light on/off, color and effect settings are never overwritten by suppression.
+
+Deep sleep is a separate opt-in timer, disabled by default. When enabled it must be at least 60 s and no earlier than any enabled standby/light timeout. It enters System OFF only on battery, with no held key, no active lift lock and Studio locked. It stops the IMU and connection; a key wakes the keyboard, and the wake key may not be emitted. This option deliberately trades first-key continuity for lower power. Defaults preserve the user's preferred fast response.
+
+Activity is based on input / meaningful action, not management reads or keepalives. Held physical keys keep the clock current, so holding a game key does not sleep or extinguish lights. Release restarts the interval. Guard unlock records activity. Applying power settings also restarts the interval to avoid an immediate transition while editing. All light I/O is queued separately from input; the old activity listeners no longer update hardware directly.
+
+Wire extension: `Capabilities.power_version` field 9 is 1; `power_lights` field 10 is a bitmask (RGB=1, backlight=2). Motion requests 12/13 get/set `PowerConfig`, responses 12/13 return config/acceptance. PowerConfig uint32 fields 1–4 are idle/rgb/backlight/deep milliseconds; bool fields 5/6 are on_usb/off_when_locked. Existing motion and guard fields are unchanged. Settings save/reset includes an independent validated versioned `power/v1` record. No input or periodic idle check writes flash.
+
+`apply.py` also checks/applies `power-lights.patch`, adds `power.c` to the build, and installs the runtime activity implementation. `test.sh` covers independent timers, boundaries, held input, USB/Studio/lock gating, and runs actual `power.c` against mocked clock/workqueue/devices, including validated save/load/reset. Physical power consumption, deep-sleep wake behavior and persistence across a real reboot remain user tests; host harnesses are not physical measurements.
+
+Before System OFF the sampler is stopped and an in-flight sensor bus operation is allowed to complete under a sampler-only mutex. Pending policy/replay work is cancelled. A failed device suspend resumes sampling. Standby does not stop the sampler, and the mutex is never taken by key processing.

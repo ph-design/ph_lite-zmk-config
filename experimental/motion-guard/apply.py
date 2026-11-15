@@ -1,4 +1,4 @@
-"""Apply preview.5 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
+"""Apply preview.6 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -23,6 +23,10 @@ for path, digest in expected.items():
         raise SystemExit(f"Unsupported baseline: {path}. Use the revisions in README.md.")
 
 copies = {
+    "power.c": root / "app/src/power.c",
+    "power_policy.h": root / "app/src/power_policy.h",
+    "power.h": root / "app/include/zmk/power.h",
+    "power_activity.c": root / "app/src/activity.c",
     "guard.h": root / "app/src/guard.h",
     "motion_guard.c": root / "app/src/motion_guard.c",
     "motion_guard.h": root / "app/include/zmk/motion_guard.h",
@@ -31,17 +35,21 @@ copies = {
     "motion.proto": messages / "proto/zmk/motion.proto",
 }
 for name, path in copies.items():
-    if name not in ("motion_subsystem.c", "motion.proto") and path.exists():
+    if name not in ("motion_subsystem.c", "motion.proto", "power_activity.c") and path.exists():
         raise SystemExit(f"Overlay already exists: {path}. Start from a clean isolated tree.")
 
 patch = assets / "integration.patch"
 subprocess.run(["git", "-C", str(root), "apply", "--check", str(patch)], check=True)
+subprocess.run(["git", "-C", str(root), "apply", "--check", str(assets / "power-lights.patch")], check=True)
 if args.check:
     print("PASS: pinned motion sources, protocol and integration patch")
 else:
     subprocess.run(["git", "-C", str(root), "apply", str(patch)], check=True)
+    subprocess.run(["git", "-C", str(root), "apply", str(assets / "power-lights.patch")], check=True)
+    cmake = root / "app/CMakeLists.txt"
+    cmake.write_bytes(cmake.read_text().replace("src/motion_guard.c", "src/motion_guard.c src/power.c").encode())
     for name, target in copies.items():
         target.parent.mkdir(parents=True, exist_ok=True)
         # Normalize source newlines so Windows checkouts work with Linux toolchains.
         target.write_bytes((assets / name).read_text().encode())
-    print("Applied EVO Motion Guard preview.5; reconfigure/rebuild protobuf and firmware.")
+    print("Applied EVO Motion Guard preview.6; reconfigure/rebuild protobuf and firmware.")
