@@ -1,4 +1,4 @@
-# Dual-keyboard ESB / BLE HID Hub 0.6.8
+# Dual-keyboard ESB / BLE HID Hub 0.6.9
 
 Standalone NCS application for Pro Micro / SuperMini nRF52840 with a compatible nice!nano UF2 bootloader. Two independently paired EVO keyboards share one RF channel; a BLE HID mouse connects through MPSL radio timeslots. This is a prototype, not a Bluetooth HCI adapter.
 
@@ -31,16 +31,15 @@ The ESB patch reduces continuous PRX timeslot extensions from 2000 to 32. The un
 
 ## Host tests
 
-From this directory:
+Run the complete host suite from this directory:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Isrc src/mouse-map.c tests/test-mouse-map.c -o /tmp/test-mouse-map
-/tmp/test-mouse-map
-cc -std=c11 -Wall -Wextra -Werror -Isrc -Itinycrypt/include \
-  src/peer-crypto.c src/input-merge.c tests/test-two-peers.c \
-  tinycrypt/source/aes_encrypt.c tinycrypt/source/ccm_mode.c tinycrypt/source/utils.c -o /tmp/test-two-peers
-/tmp/test-two-peers
+sh tests/run.sh
 ```
+
+This includes the real port-name descriptor helper, AES known-answer vectors,
+mouse parsing, two-peer crypto/replay and merge, link/motion LEDs, and the actual
+USB axis output loop. Sanitizers stop at the first error. No hardware is accessed.
 
 ## Pairing and management
 
@@ -97,6 +96,27 @@ cc -std=c11 -Wall -Wextra -Werror -Isrc tests/test-led-motion.c -o /tmp/test-led
 
 EVO preview.10 can send authenticated 0xd1 + little-endian signed16 axis reports. USB exposes independent joystick application collections (report IDs4/5) for the two peers. No summing, last-writer ownership or cross-peer overwrite. Each peer centers after 250ms without axis updates; disconnect/new session releases it. The actual USB loop still evaluates this timeout under continuous keyboard traffic. A reconnect forces current/neutral output. Unchanged axes use reduced heartbeat output; normal key/consumer/mouse layouts stay unchanged.
 
-Run `python3 tests/test-axis.py` for actual descriptor sizes, output-loop isolation and timeout tests. Build with the pinned NCS toolchain as above. This is generic HID joystick support, not XInput; actual enumeration/game/RF/latency remains untested. Mode activation and the keyboard's3-second lease are described in `../motion-guard/IMU_GAME.md`. Upgrade/replug Hub before enabling the keyboard game mode. This source update was built, not flashed.
+Run `python3 tests/test-axis.py` for actual descriptor sizes, output-loop isolation and timeout tests. Build with the pinned NCS toolchain as above. This is generic HID joystick support, not XInput; actual enumeration/game/RF/latency remains untested. Mode activation and the keyboard's3-second lease are described in `../motion-guard/IMU_GAME.md`. Upgrade/replug Hub before enabling the keyboard game mode. The original 0.6.8 axis update was build-tested; 0.6.9 has since been flashed for port-name verification. Actual game input remains unverified.
 
 Host sanitizer checks also exposed signed-byte shift undefined behavior in the existing vendored AES key expansion. Explicit uint32_t casts preserve the intended bit pattern. The AES-128 known-answer vector and peer crypto/replay tests pass with address/undefined sanitizers and non-recovering errors. Vendor license notices are retained.
+
+
+## Distinct serial interfaces (0.6.9)
+
+| USB interface | Device-reported name | Purpose |
+| --- | --- | --- |
+| MI_00 | PH Hub - Management (AT) | Hub status, LEDs and BLE peripherals |
+| MI_02 | PH Hub - Keyboard Config (Studio) | Configure the selected keyboard |
+
+`app.overlay` supplies each CDC interface label. The pinned SDK sets its
+`iInterface` string but leaves the IAD `iFunction` unset. The isolated
+`src/usb-port-names.c` helper mirrors that index after `usbd_init()` and before
+`usbd_enable()`, using the two known CDC device instances. No SDK source patch,
+VID/PID, serial number, interface order, HID descriptor or pairing change is needed.
+The helper depends on the pinned USB class API; review it when updating the SDK.
+
+Windows port numbers and generic friendly names are system-managed. Chromium's
+picker uses the device-reported description; a site cannot rename that native
+picker. Legacy Hub firmware still has identical descriptions, so ZMKs retains
+interface guidance and protocol checks. Reconnect/reopen the picker after flashing.
+See [VALIDATION.md](VALIDATION.md) for the actual Windows names and flash evidence.

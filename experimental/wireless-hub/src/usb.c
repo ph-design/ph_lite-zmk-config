@@ -9,6 +9,7 @@
 #include "hub.h"
 #include "axis_descriptor.h"
 #include "axis-state.h"
+#include "usb-port-names.h"
 // Preserve the deployed receiver's VID/PID; no Bluetooth HCI is exposed.
 USBD_DEVICE_DEFINE(hub_usb,DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),0x5048,0xff11);
 USBD_DESC_LANG_DEFINE(hub_lang);
@@ -103,5 +104,6 @@ int hub_usb_init(void) {
     err=usbd_register_all_classes(&hub_usb,USBD_SPEED_FS,1,NULL);if(err)return err;
     usbd_device_set_code_triple(&hub_usb,USBD_SPEED_FS,USB_BCC_MISCELLANEOUS,2,1);
     err=usbd_init(&hub_usb);if(err)return err;
+    hub_usb_name_ports();
     return usbd_enable(&hub_usb);
 }

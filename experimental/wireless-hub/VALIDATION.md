@@ -22,3 +22,12 @@ These are functional checks, not input-latency or RF loss-rate measurements. The
 ### Source-package rebuild check
 
 The final PR directory was checked from fresh pinned core/config/messages checkouts: Studio patches and the optional Motion Guard overlay applied successfully, with baseline motion RPC/protocol hashes verified before mutation. EVO preview.5 (`ph_lite` / `PH60-SC_V2_EVO`) and Hub 0.6.7 (`promicro_nrf52840/nrf52840/uf2`) both rebuilt successfully from these proposed sources. All policy/settings, real reset/heartbeat harnesses, link/motion LED, mouse parser and peer crypto/input-merge host tests passed. This check did not flash either device.
+
+
+## Hub 0.6.9 serial roles — 2026-11-15
+
+- Built with the pinned NCS/SDK; backed up the current UF2 and verified the nice!nano board ID before flashing the application-only image. No pairing or keymap commands were sent.
+- Read back `ph_lite_dongle 0.6.9-serial-roles`, `HUB_FAULT=0`, `HUB_SAFE_MODE=0`; peer configuration matched the pre-flash state. This does not prove physical keyboard/mouse input or long-term stability.
+- Windows `DEVPKEY_Device_BusReportedDeviceDesc` reports `PH Hub - Management (AT)` for MI_00 / COM63 and `PH Hub - Keyboard Config (Studio)` for MI_02 / COM62 on this PC. Generic serial friendly names remain system-owned. Port numbers are local observations, not interface identities.
+- Full Hub host suite passes, including distinct interface/function indices, malformed descriptors, preserved interface numbering and idempotence. Existing crypto, mouse, two-peer merge, LEDs and axis timeout tests pass.
+- Raw backups and device identities are kept outside the repository and distribution package. No new physical input-latency, RF-soak or game measurements were performed.

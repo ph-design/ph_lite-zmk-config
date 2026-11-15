@@ -1,9 +1,23 @@
-# Wireless Hub prototype
+# Experimental keyboard and Hub firmware
 
-`wireless-hub/` is a standalone NCS application for a Pro Micro / SuperMini nRF52840 receiver. It combines two EVO keyboards over encrypted ESB with one BLE HID mouse and exposes USB input plus wireless Studio management. It is built separately from the repository's normal ZMK configuration.
+Current maintained combination: **keyboard preview.12 + Hub 0.6.9**. These optional
+kits do not replace the repository's default ZMK build. Source submission and UF2
+delivery are separate; the PR contains source, while test images are delivered in
+the companion local test package.
 
-`studio-2g4/` contains the pinned EVO-side ZMK/config patches, protocol extension and source snapshots. These patches target their documented baseline, not an arbitrary current ZMK checkout.
+| Directory | Responsibility | Build / tests |
+| --- | --- | --- |
+| [studio-2g4](studio-2g4/README.md) | Pinned keyboard radio/RPC bridge, pairing extension, bounded transport and USB FIFO handling | Apply first to the exact documented ZMK/config baseline |
+| [motion-guard](motion-guard/README.md) | EVO guard/tap/tilt/axis; independent power; sensorless SC V2 / Multi V2; USB BL and RGB fades | Apply second with apply.py; test.sh against the applied tree |
+| [wireless-hub](wireless-hub/README.md) | Dual keyboard ESB, BLE mouse, LEDs, joystick reports and distinct CDC names | Separate pinned NCS application; tests/run.sh |
 
-`motion-guard/` adds EVO Motion Guard preview.5 after the Studio patch kit: immediate carry locking, stable-placement confirmation, buffered landing keys, encrypted lock telemetry and five versioned settings exposed by ZMKs.
+Apply both keyboard overlay layers together. Do not copy historical standalone
+source snapshots over the assembled tree. Keyboard and Hub SDKs are different;
+keep separate build environments. Existing protocol fields and stored settings
+remain versioned; experimental game mode is never persisted.
 
-This package does not change the default keyboard builds. Hardware validation and remaining limitations are documented in `wireless-hub/VALIDATION.md`.
+Current validation: the user confirmed preview.12 USB Studio connection works.
+Hub 0.6.9 was flashed and Windows returned distinct interface names; peer settings
+were retained and fault count was zero. These observations do not substitute for
+physical input, game, battery, latency or long RF soak measurements. Detailed
+limits are recorded in each kit and [Hub validation](wireless-hub/VALIDATION.md).

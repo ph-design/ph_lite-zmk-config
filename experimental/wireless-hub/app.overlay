@@ -4,9 +4,12 @@
 &spi2 { status = "disabled"; };
 &ieee802154 { status = "disabled"; };
 &zephyr_udc0 {
-    studio_radio_uart: studio_radio_uart { compatible = "zephyr,cdc-acm-uart"; };
+    studio_radio_uart: studio_radio_uart {
+        compatible = "zephyr,cdc-acm-uart";
+        label = "PH Hub - Keyboard Config (Studio)";
+    };
 };
-cdc_acm_uart0: &board_cdc_acm_uart {};
+cdc_acm_uart0: &board_cdc_acm_uart { label = "PH Hub - Management (AT)"; };
 dongle_status_led: &red_pwm_led { pwms = <&pwm0 0 PWM_MSEC(1) PWM_POLARITY_NORMAL>; };
 / {
     hub_hid: hub_hid {
