@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/motion.h>
 #include <zmk/motion_guard.h>
 #include <zmk/power.h>
+#include <zmk/tap.h>
 #include "../guard.h"
 #include <zmk/studio/rpc.h>
 #include <zmk/events/motion_live_state_changed.h>
@@ -106,6 +107,7 @@ zmk_studio_Response get_capabilities(const zmk_studio_Request *req) {
     resp.threshold_max = 127;
     resp.guard_version = ready ? 1 : 0;
     resp.power_version = 1;
+    resp.tap_version = ready ? 1 : 0;
     resp.power_lights = (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? 1 : 0) | (IS_ENABLED(CONFIG_ZMK_BACKLIGHT) ? 2 : 0);
     resp.supports_still_wake = false;
     resp.supports_sleep_wake = false;
@@ -119,6 +121,8 @@ zmk_studio_Response get_tap_config(const zmk_studio_Request *req) {
 
     zmk_motion_get_tap_config(&cfg);
     tap_to_proto(&cfg, &resp);
+    struct zmk_tap_options o; zmk_tap_get_options(&o);
+    resp.axes_mask = o.axes; resp.split_sides = o.split; resp.typing_quiet_ms = o.quiet_ms;
 
     return MOTION_RESPONSE(tap_config, resp);
 }
@@ -131,7 +135,15 @@ zmk_studio_Response set_tap_config(const zmk_studio_Request *req) {
         return MOTION_RESPONSE(set_tap_config, false);
     }
 
-    return MOTION_RESPONSE(set_tap_config, zmk_motion_set_tap_config(&cfg) == 0);
+    const zmk_motion_TapConfig *in = &req->subsystem.motion.request_type.set_tap_config;
+    struct zmk_tap_options previous; zmk_tap_get_options(&previous);
+    struct zmk_tap_options o = {in->axes_mask, in->typing_quiet_ms, in->split_sides};
+    bool extended = in->axes_mask || in->typing_quiet_ms || in->split_sides;
+    if (extended && !zmk_tap_options_valid(&o)) return MOTION_RESPONSE(set_tap_config, false);
+    int rc = extended ? zmk_tap_set_options(&o) : 0;
+    if (!rc) rc = zmk_motion_set_tap_config(&cfg);
+    if (rc && extended) zmk_tap_set_options(&previous);
+    return MOTION_RESPONSE(set_tap_config, rc == 0);
 }
 
 zmk_studio_Response get_carry_config(const zmk_studio_Request *req) {
@@ -215,6 +227,27 @@ zmk_studio_Response set_sleep_wake_config(const zmk_studio_Request *req) {
     return MOTION_RESPONSE(set_sleep_wake_config, zmk_motion_set_sleep_wake_config(&cfg) == 0);
 }
 
+zmk_studio_Response get_tap_diagnostics(const zmk_studio_Request *req) {
+    struct zmk_tap_diagnostics d; zmk_tap_get_diagnostics(&d);
+    zmk_motion_TapDiagnostics out = {.irq_count = d.irq, .single_count = d.single, .double_count = d.dbl,
+        .gesture_count = d.gestures, .action_count = d.actions, .suppressed_count = d.suppressed,
+        .queue_drops = d.drops, .odr_hz = d.odr, .engine = d.engine, .test_remaining_ms = d.test_ms,
+        .last_source = d.src, .last_gesture = d.gesture, .x_count = d.axes[0], .y_count = d.axes[1],
+        .z_count = d.axes[2], .full_scale_mg = d.full_scale_mg, .error = d.error,
+        .x_mg = d.current[0], .y_mg = d.current[1], .z_mg = d.current[2]};
+    out.registers.size = 11; memcpy(out.registers.bytes, d.registers, 11);
+    return MOTION_RESPONSE(tap_diagnostics, out);
+}
+zmk_studio_Response set_tap_test(const zmk_studio_Request *req) {
+    return MOTION_RESPONSE(set_tap_test, zmk_tap_set_test(req->subsystem.motion.request_type.set_tap_test) == 0);
+}
+zmk_studio_Response get_tap_capture(const zmk_studio_Request *req) {
+    struct zmk_tap_capture c; zmk_tap_get_capture(&c);
+    zmk_motion_TapCapture out = {.sequence = c.sequence, .count = c.count};
+    out.frames.size = c.count * 8; memcpy(out.frames.bytes, c.frames, out.frames.size);
+    return MOTION_RESPONSE(tap_capture, out);
+}
+
 zmk_studio_Response get_power_config(const zmk_studio_Request *req) {
     struct zmk_power_config c; zmk_power_get_config(&c);
     zmk_motion_PowerConfig out = {.idle_timeout_ms = c.idle_timeout_ms, .rgb_off_ms = c.rgb_off_ms,
@@ -230,7 +263,7 @@ zmk_studio_Response set_power_config(const zmk_studio_Request *req) {
 }
 
 zmk_studio_Response save_state(const zmk_studio_Request *req) {
-    return MOTION_RESPONSE(save_state, zmk_motion_save_state() == 0 && zmk_motion_guard_save_config() == 0 && zmk_power_save_config() == 0);
+    return MOTION_RESPONSE(save_state, zmk_motion_save_state() == 0 && zmk_motion_guard_save_config() == 0 && zmk_power_save_config() == 0 && zmk_tap_save_options() == 0);
 }
 
 zmk_studio_Response set_live_stream(const zmk_studio_Request *req) {
@@ -240,6 +273,9 @@ zmk_studio_Response set_live_stream(const zmk_studio_Request *req) {
     return MOTION_RESPONSE(set_live_stream, true);
 }
 
+ZMK_RPC_SUBSYSTEM_HANDLER(motion, get_tap_diagnostics, ZMK_STUDIO_RPC_HANDLER_SECURED);
+ZMK_RPC_SUBSYSTEM_HANDLER(motion, set_tap_test, ZMK_STUDIO_RPC_HANDLER_SECURED);
+ZMK_RPC_SUBSYSTEM_HANDLER(motion, get_tap_capture, ZMK_STUDIO_RPC_HANDLER_SECURED);
 ZMK_RPC_SUBSYSTEM_HANDLER(motion, get_power_config, ZMK_STUDIO_RPC_HANDLER_SECURED);
 ZMK_RPC_SUBSYSTEM_HANDLER(motion, set_power_config, ZMK_STUDIO_RPC_HANDLER_SECURED);
 ZMK_RPC_SUBSYSTEM_HANDLER(motion, get_capabilities, ZMK_STUDIO_RPC_HANDLER_SECURED);
@@ -258,7 +294,8 @@ static int motion_reset_all(void) {
     int rc = zmk_motion_settings_reset();
     int guard_rc = zmk_motion_guard_reset_config();
     int power_rc = zmk_power_reset_config();
-    return rc ? rc : guard_rc ? guard_rc : power_rc;
+    int tap_rc = zmk_tap_reset();
+    return rc ? rc : guard_rc ? guard_rc : power_rc ? power_rc : tap_rc;
 }
 ZMK_RPC_SUBSYSTEM_SETTINGS_RESET(motion, motion_reset_all);
 

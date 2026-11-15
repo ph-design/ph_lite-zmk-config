@@ -3,6 +3,7 @@ syntax = "proto3";
 package zmk.motion;
 
 import "keymap.proto";
+import "nanopb.proto";
 
 message Request {
     oneof request_type {
@@ -19,6 +20,9 @@ message Request {
         SleepWakeConfig set_sleep_wake_config = 11;
         bool get_power_config = 12;
         PowerConfig set_power_config = 13;
+        bool get_tap_diagnostics = 14;
+        bool set_tap_test = 15;
+        bool get_tap_capture = 16;
     }
 }
 
@@ -37,6 +41,9 @@ message Response {
         bool          set_sleep_wake_config  = 11;
         PowerConfig power_config = 12;
         bool set_power_config = 13;
+        TapDiagnostics tap_diagnostics = 14;
+        bool set_tap_test = 15;
+        TapCapture tap_capture = 16;
     }
 }
 
@@ -51,6 +58,7 @@ message Capabilities {
     uint32 guard_version = 8; // 1: explicit configurable Motion Guard
     uint32 power_version = 9;
     uint32 power_lights = 10; // bit 0: RGB, bit 1: backlight
+    uint32 tap_version = 11;
 }
 
 // Any binding may be omitted. When a single and its double are both set on
@@ -66,6 +74,9 @@ message TapConfig {
     zmk.keymap.BehaviorBinding right_single_binding = 8;
     zmk.keymap.BehaviorBinding right_double_binding = 9;
     uint32 layer_mask    = 10;  // 0 = all layers
+    uint32 axes_mask = 11;
+    bool split_sides = 12;
+    uint32 typing_quiet_ms = 13;
 }
 
 message CarryConfig {
@@ -126,4 +137,19 @@ message PowerConfig {
     uint32 deep_sleep_ms = 4;
     bool on_usb = 5;
     bool off_when_locked = 6;
+}
+
+message TapDiagnostics {
+ uint32 irq_count = 1; uint32 single_count = 2; uint32 double_count = 3;
+ uint32 gesture_count = 4; uint32 action_count = 5; uint32 suppressed_count = 6;
+ uint32 queue_drops = 7; uint32 odr_hz = 8; uint32 engine = 9;
+ uint32 test_remaining_ms = 10; uint32 last_source = 11; uint32 last_gesture = 12;
+ uint32 x_count = 13; uint32 y_count = 14; uint32 z_count = 15;
+ uint32 full_scale_mg = 16; int32 error = 17;
+ bytes registers = 18 [(nanopb).max_size = 11];
+ int32 x_mg = 19; int32 y_mg = 20; int32 z_mg = 21;
+}
+message TapCapture {
+ uint32 sequence = 1; uint32 count = 2;
+ bytes frames = 3 [(nanopb).max_size = 256]; // little endian t_ms16/x_mg16/y_mg16/z_mg16
 }

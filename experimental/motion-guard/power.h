@@ -14,3 +14,5 @@ bool zmk_power_deep_sleep(void);
 bool zmk_power_rgb_off(void);
 bool zmk_power_backlight_off(void);
 void zmk_power_update(void);
+
+bool zmk_power_input_recent(uint32_t quiet_ms);

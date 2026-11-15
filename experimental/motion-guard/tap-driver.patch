@@ -1,0 +1,48 @@
+--- a/app/module/drivers/sensor/lis2dh/lis2dh_trigger.c
++++ b/app/module/drivers/sensor/lis2dh/lis2dh_trigger.c
+@@ -18,6 +18,7 @@
+ 
+ LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
+ #include "lis2dh.h"
++#include <zmk/tap.h>
+ 
+ static const gpio_flags_t gpio_int_cfg[5] = {
+     GPIO_INT_EDGE_BOTH,  GPIO_INT_EDGE_RISING, GPIO_INT_EDGE_FALLING,
+@@ -494,6 +495,7 @@
+ 
+     ARG_UNUSED(pins);
+ 
++    zmk_tap_driver_gpio();
+     atomic_set_bit(&lis2dh->trig_flags, TRIGGED_INT2);
+ 
+     // level triggered: disable until processed
+@@ -572,6 +574,7 @@
+             return;
+         }
+ 
++        zmk_tap_driver_irq(reg_val);
+         if ((reg_val & (LIS2DH_CLICK_SRC_SCLICK | LIS2DH_CLICK_SRC_DCLICK)) != 0) {
+             lis2dh->click_src = reg_val;
+         }
+@@ -708,3 +711,21 @@
+ end:
+     return status;
+ }
++
++int zmk_tap_sensor_configure(const struct device *dev, uint8_t axes, bool dbl) {
++    struct lis2dh_data *data = dev->data;
++    uint8_t val = 0;
++    for (unsigned i = 0; i < 3; i++) if (axes & BIT(i)) val |= BIT(i * 2 + (dbl ? 1 : 0));
++    int rc = data->hw_tf->write_reg(dev, LIS2DH_REG_CFG_CLICK, val);
++    if (rc) return rc;
++    const uint8_t addresses[11] = {LIS2DH_REG_CTRL1, LIS2DH_REG_CTRL2, LIS2DH_REG_CTRL3,
++        LIS2DH_REG_CTRL4, LIS2DH_REG_CTRL6, LIS2DH_REG_CFG_CLICK, LIS2DH_REG_CFG_CLICK_THS,
++        LIS2DH_REG_TIME_LIMIT, LIS2DH_REG_TIME_LATENCY, LIS2DH_REG_TIME_WINDOW, LIS2DH_REG_CTRL5};
++    uint8_t regs[11];
++    for (unsigned i = 0; i < 11; i++) { rc = data->hw_tf->read_reg(dev, addresses[i], &regs[i]); if (rc) return rc; }
++    int odr = lis2dh_current_odr_hz(dev);
++    if (odr < 0) return odr;
++    uint32_t fs = (2U << ((regs[3] & LIS2DH_FS_MASK) >> LIS2DH_FS_SHIFT)) * 1000;
++    zmk_tap_driver_registers(regs, odr, fs);
++    return 0;
++}

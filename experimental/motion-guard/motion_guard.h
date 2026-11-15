@@ -20,3 +20,5 @@ int zmk_motion_guard_reset_config(void);
 
 void zmk_motion_guard_prepare_sleep(void);
 void zmk_motion_guard_resume_sampling(void);
+
+int zmk_motion_guard_set_tap_odr(bool enabled);

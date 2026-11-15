@@ -13,6 +13,7 @@
 #include <zmk/events/position_state_changed.h>
 #include <zmk/motion_guard.h>
 #include <zmk/power.h>
+#include <zmk/tap.h>
 #if IS_ENABLED(CONFIG_ZMK_2G4)
 #include <zmk/2g4.h>
 #endif
@@ -71,6 +72,7 @@ static K_MUTEX_DEFINE(sampler_mutex);
 static struct sample_frame latest;
 static struct k_spinlock frame_lock;
 static uint32_t processed_sequence;
+static atomic_t tap_odr;
 static void policy_work_cb(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(policy_work, policy_work_cb);
 static void drain_work_cb(struct k_work *work);
@@ -185,15 +187,28 @@ static void sampler_thread(void *a, void *b, void *c) {
                            sensor_channel_get(imu, SENSOR_CHAN_ACCEL_XYZ, frame.xyz) == 0;
             }
             frame.time = k_uptime_get();
+            if (frame.ok) zmk_tap_sample(frame.xyz);
+            static int64_t last_guard_frame;
+            if (frame.time - last_guard_frame >= 10) {
+            last_guard_frame = frame.time;
             k_spinlock_key_t key = k_spin_lock(&frame_lock);
             frame.sequence = latest.sequence + 1;
             latest = frame;
             k_spin_unlock(&frame_lock, key);
             k_work_schedule(&policy_work, K_NO_WAIT);
+            }
             k_mutex_unlock(&sampler_mutex);
         }
-        k_sleep(K_MSEC(10));
+        if (zmk_tap_test_active()) k_usleep(2500); else k_sleep(K_MSEC(10));
     }
+}
+int zmk_motion_guard_set_tap_odr(bool enabled) {
+    k_mutex_lock(&sampler_mutex, K_FOREVER);
+    const struct sensor_value odr = {.val1 = enabled ? 400 : 100};
+    int rc = device_is_ready(imu) ? sensor_attr_set(imu, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr) : -ENODEV;
+    if (!rc) atomic_set(&tap_odr, enabled);
+    k_mutex_unlock(&sampler_mutex);
+    return rc;
 }
 void zmk_motion_guard_prepare_sleep(void) {
     atomic_set(&started, 0);
@@ -224,7 +239,7 @@ static int guard_init(void) {
         if (rc) { LOG_WRN("100Hz ODR request failed: %d", rc); }
     } else { LOG_ERR("IMU unavailable; disable carry in Studio to recover input"); }
     atomic_set(&started, 1);
-    LOG_INF("EVO Motion Guard preview.6: runtime idle/light power settings");
+    LOG_INF("EVO Motion Guard preview.7: hardware tap modes and diagnostics");
     k_work_schedule(&policy_work, K_NO_WAIT);
     return 0;
 }

@@ -1,6 +1,6 @@
-# EVO Motion Guard preview.6 · 拿起锁定
+# EVO Motion Guard preview.7 · 拿起锁定
 
-This is an optional overlay after `../studio-2g4/`, not a replacement for the default keyboard build. It combines the tested preview.4 policy / encrypted telemetry with additive, validated settings. No tap-detection algorithm, axis selection, trigger callback or ODR change is included in preview.6.
+This is an optional overlay after `../studio-2g4/`, not a replacement for the default keyboard build. It combines the tested preview.4 policy / encrypted telemetry with additive, validated settings. Preview.7 adds hardware-assisted tap detection, diagnostics and corrected LIS2DH sample conversion.
 
 ## Fixed baselines and application order
 
@@ -64,3 +64,19 @@ Wire extension: `Capabilities.power_version` field 9 is 1; `power_lights` field 
 `apply.py` also checks/applies `power-lights.patch`, adds `power.c` to the build, and installs the runtime activity implementation. `test.sh` covers independent timers, boundaries, held input, USB/Studio/lock gating, and runs actual `power.c` against mocked clock/workqueue/devices, including validated save/load/reset. Physical power consumption, deep-sleep wake behavior and persistence across a real reboot remain user tests; host harnesses are not physical measurements.
 
 Before System OFF the sampler is stopped and an in-flight sensor bus operation is allowed to complete under a sampler-only mutex. Pending policy/replay work is cancelled. A failed device suspend resumes sampling. Standby does not stop the sampler, and the mutex is never taken by key processing.
+
+## Tap detection and driver corrections (preview.7)
+
+LIS2DH normal 10-bit samples previously used an approximate full-scale conversion: nominal 1 g decoded to approximately 0.976 g. Conversion now uses the datasheet nominal sensitivity for each range and 8/10/12-bit mode, explicit signed little-endian decoding and 64-bit intermediate arithmetic. BDU prevents mixed high/low bytes. Tests execute the actual patched fetch/conversion/channel getters. Register order is X/Y/Z; physical PCB-to-case axis orientation has not been measured, so no speculative X/Y swap is applied. Studio shows sensor-axis values in mg for this measurement. Real sensor tolerances still apply.
+
+Enabled tapping selects 400 Hz hardware ODR; disabling restores 100 Hz. The guard consumes frames at its existing approximately 100 Hz cadence. I2C remains on the sampler thread. The hardware click engine selects single OR double detection, rather than arming both bits on the same axis. Default mode is one case-wide gesture, all sensor axes, 120 ms typing quiet interval. Left/right-by-polarity remains an explicit experimental option and is not reliable physical localization. Existing right-side bindings are preserved while hidden in unified mode.
+
+Double-only bindings use hardware double-click. When both single and double actions are assigned, hardware single events feed bounded software arbitration; single actions wait for the second-tap interval. Physical key processing gains no new delay. Tap dispatch waits 12 ms to allow a coincident physical key to veto it, and rejects held/recent keys, lift-lock transitions, stale configurations and queue overflow. Carry transitions clear pending gestures.
+
+Studio provides a 60-second no-action test, GPIO/recognition/gesture/action/suppression counters, actual register snapshot and a bounded 32-frame waveform with actual timestamps. Test events remain non-executing even if processed after test expiry. Snapshot reads do not reread the self-clearing CLICK_SRC register. Test sampling is best-effort and is not an oscilloscope or guaranteed 400 Hz host recording.
+
+Wire extension: Capabilities uint32 tap_version=11 is 1. TapConfig fields 11/12/13 are axes_mask (1..7), split_sides (bool), typing_quiet_ms (0..1000). Complete extensions are validated transactionally; old clients preserve current extra options. Requests 14/15/16 get diagnostics, set test (bool), get capture; responses 14/15/16 return diagnostics, acceptance, capture. Capture bytes are at most 256 bytes: 32 little-endian frames of uint16 milliseconds and int16 X/Y/Z mg. Options persist independently as tap/v1 only on explicit Save; reset includes this record. Existing binding fields remain unchanged. The messages module must provide nanopb.proto, as the pinned module does.
+
+Validation: host policy and real-controller tests, actual driver functions across modes/ranges and fresh EVO compilation pass. Physical axis orientation, click recognition rate, false triggers, power use and real reboot persistence need user testing. No preview.7 keyboard flash was performed. The nominal scale correction slightly changes motion thresholds in physical units; repeat carrying/placement and typing checks after flashing.
+
+References: [LIS2DH12 datasheet](https://www.st.com/resource/en/datasheet/lis2dh12.pdf), [ST AN5005](https://www.st.com/resource/en/application_note/an5005-lis2dh12-ultralowpower-highperformance-3axis-nano-accelerometer-with-digital-output-stmicroelectronics.pdf).

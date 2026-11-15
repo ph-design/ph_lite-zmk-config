@@ -1,9 +1,10 @@
-"""Apply preview.6 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
+"""Apply preview.7 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
 from pathlib import Path
 import argparse
 import hashlib
 import shutil
 import subprocess
+import sys
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("zmk_root", type=Path)
@@ -23,6 +24,10 @@ for path, digest in expected.items():
         raise SystemExit(f"Unsupported baseline: {path}. Use the revisions in README.md.")
 
 copies = {
+    "lis2dh_decode.h": root / "app/module/drivers/sensor/lis2dh/lis2dh_decode.h",
+    "tap.c": root / "app/src/tap.c",
+    "tap.h": root / "app/include/zmk/tap.h",
+    "tap_policy.h": root / "app/src/tap_policy.h",
     "power.c": root / "app/src/power.c",
     "power_policy.h": root / "app/src/power_policy.h",
     "power.h": root / "app/include/zmk/power.h",
@@ -41,15 +46,20 @@ for name, path in copies.items():
 patch = assets / "integration.patch"
 subprocess.run(["git", "-C", str(root), "apply", "--check", str(patch)], check=True)
 subprocess.run(["git", "-C", str(root), "apply", "--check", str(assets / "power-lights.patch")], check=True)
+subprocess.run(["git", "-C", str(root), "apply", "--check", str(assets / "tap-driver.patch")], check=True)
+subprocess.run(["git", "-C", str(root), "apply", "--check", str(assets / "driver-units.patch")], check=True)
 if args.check:
     print("PASS: pinned motion sources, protocol and integration patch")
 else:
     subprocess.run(["git", "-C", str(root), "apply", str(patch)], check=True)
     subprocess.run(["git", "-C", str(root), "apply", str(assets / "power-lights.patch")], check=True)
+    subprocess.run(["git", "-C", str(root), "apply", str(assets / "tap-driver.patch")], check=True)
+    subprocess.run(["git", "-C", str(root), "apply", str(assets / "driver-units.patch")], check=True)
     cmake = root / "app/CMakeLists.txt"
-    cmake.write_bytes(cmake.read_text().replace("src/motion_guard.c", "src/motion_guard.c src/power.c").encode())
+    cmake.write_bytes(cmake.read_text().replace("src/motion_guard.c", "src/motion_guard.c src/power.c src/tap.c").encode())
     for name, target in copies.items():
         target.parent.mkdir(parents=True, exist_ok=True)
         # Normalize source newlines so Windows checkouts work with Linux toolchains.
         target.write_bytes((assets / name).read_text().encode())
-    print("Applied EVO Motion Guard preview.6; reconfigure/rebuild protobuf and firmware.")
+    subprocess.run([sys.executable, str(assets / "apply_tap.py"), str(root)], check=True)
+    print("Applied EVO Motion Guard preview.7; reconfigure/rebuild protobuf and firmware.")

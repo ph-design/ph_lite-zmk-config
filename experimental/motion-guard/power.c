@@ -16,6 +16,7 @@ extern int zmk_backlight_power_refresh(void);
 static struct zmk_power_config config = ZMK_POWER_DEFAULTS;
 static struct k_spinlock config_lock;
 static int64_t last_activity;
+static int64_t last_key = -1;
 static bool initialized;
 static bool held_keys[128];
 static unsigned held_count;
@@ -91,6 +92,7 @@ void zmk_power_update(void) {
 }
 void zmk_power_note_activity(void) { last_activity = k_uptime_get(); zmk_power_update(); }
 void zmk_power_note_key(uint32_t position, bool down) {
+    last_key = k_uptime_get();
     if (position < ARRAY_SIZE(held_keys) && held_keys[position] != down) {
         held_keys[position] = down;
         if (down) held_count++; else if (held_count) held_count--;
@@ -106,3 +108,5 @@ static int power_init(void) { last_activity = k_uptime_get(); initialized = true
 /* RGB and backlight initialize at CONFIG_APPLICATION_INIT_PRIORITY first. */
 BUILD_ASSERT(CONFIG_APPLICATION_INIT_PRIORITY < 99);
 SYS_INIT(power_init, APPLICATION, 99);
+
+bool zmk_power_input_recent(uint32_t quiet_ms) { return held_count || (last_key >= 0 && k_uptime_get() - last_key < quiet_ms); }
