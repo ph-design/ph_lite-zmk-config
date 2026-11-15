@@ -4,7 +4,7 @@ import tempfile, subprocess
 assets = Path(__file__).resolve().parent
 with tempfile.TemporaryDirectory(prefix='tap-runtime-') as directory:
     root = Path(directory)
-    headers = ['zephyr/kernel.h','zephyr/init.h','zephyr/settings/settings.h','zephyr/device.h','zephyr/drivers/sensor.h','zephyr/drivers/sensor/lis2dh.h','zephyr/sys/byteorder.h','zmk/motion.h','zmk/motion_guard.h','zmk/power.h','zmk/keymap.h','zmk/behavior.h','zmk/virtual_key_position.h','zmk/events/position_state_changed.h']
+    headers = ['zephyr/kernel.h','zephyr/init.h','zephyr/settings/settings.h','zephyr/device.h','zephyr/drivers/sensor.h','zephyr/drivers/sensor/lis2dh.h','zephyr/sys/byteorder.h','zmk/motion.h','zmk/imu_game.h','zmk/motion_guard.h','zmk/power.h','zmk/keymap.h','zmk/behavior.h','zmk/virtual_key_position.h','zmk/events/position_state_changed.h']
     for name in headers:
         p = root / name; p.parent.mkdir(parents=True, exist_ok=True); p.write_text('/* mocked */\n')
     (root/'zmk/tap.h').write_text((assets/'tap.h').read_text())
@@ -59,6 +59,7 @@ struct zmk_behavior_binding{const char*behavior_dev;};
 struct zmk_motion_tap_config{bool enabled;uint32_t threshold,time_limit_ms,latency_ms,window_ms;struct zmk_behavior_binding left_single,left_double,right_single,right_double;uint32_t layer_mask;};
 static struct zmk_motion_tap_config current;
 static int zmk_motion_get_tap_config(struct zmk_motion_tap_config*out){*out=current;return 0;}
+static bool zmk_imu_game_active(void){return false;}
 static bool blocked,typing;static uint32_t guard_gen;
 static bool zmk_motion_guard_blocks_output(void){return blocked;}
 static uint32_t zmk_motion_guard_generation(void){return guard_gen;}

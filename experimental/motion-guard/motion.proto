@@ -23,6 +23,9 @@ message Request {
         bool get_tap_diagnostics = 14;
         bool set_tap_test = 15;
         bool get_tap_capture = 16;
+        bool get_imu_game_config = 17;
+        ImuGameConfig set_imu_game_config = 18;
+        bool set_imu_game_mode = 19;
     }
 }
 
@@ -44,6 +47,9 @@ message Response {
         TapDiagnostics tap_diagnostics = 14;
         bool set_tap_test = 15;
         TapCapture tap_capture = 16;
+        ImuGameConfig imu_game_config = 17;
+        bool set_imu_game_config = 18;
+        bool set_imu_game_mode = 19;
     }
 }
 
@@ -59,6 +65,7 @@ message Capabilities {
     uint32 power_version = 9;
     uint32 power_lights = 10; // bit 0: RGB, bit 1: backlight
     uint32 tap_version = 11;
+    uint32 imu_version = 12;
 }
 
 // Any binding may be omitted. When a single and its double are both set on
@@ -121,6 +128,10 @@ message LiveState {
     Orientation orientation    = 2;
     bool        carry_active   = 3;  // walking detected, sleep imminent
     bool        tap_detected   = 4;
+    int32 x_mg = 6; int32 y_mg = 7; int32 z_mg = 8;
+    uint32 sample_time = 9; bool tilt_valid = 10; bool game_active = 11;
+    int32 game_axis = 12; int32 roll_cdeg = 13; int32 pitch_cdeg = 14;
+    bool game_supported = 15;
     uint32      last_click_src = 5;  // raw CLICK_SRC of the last tap
 }
 
@@ -152,4 +163,10 @@ message TapDiagnostics {
 message TapCapture {
  uint32 sequence = 1; uint32 count = 2;
  bytes frames = 3 [(nanopb).max_size = 256]; // little endian t_ms16/x_mg16/y_mg16/z_mg16
+}
+
+message ImuGameConfig {
+    uint32 source = 1; uint32 range_deg = 2; uint32 deadzone_deg = 3;
+    uint32 smoothing_ms = 4; bool invert = 5; bool swap_xy = 6; uint32 flip_mask = 7;
+    int32 center_roll = 8; int32 center_pitch = 9;
 }

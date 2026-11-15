@@ -65,6 +65,11 @@ ZMK_RPC_SUBSYSTEM_HANDLER(core, enter_bootloader, ZMK_STUDIO_RPC_HANDLER_SECURED
 
 ZMK_RPC_SUBSYSTEM_HANDLER(core, get_device_info,''')
 
+# Fit the stop-and-wait radio budget (~12 bytes per acknowledged fragment).
+# USB keeps 25 Hz; radio publishes the latest state at 10 Hz, with bounded backlog.
+edit("app/src/motion.c", '#include <zmk/imu_game.h>', '#include <zmk/imu_game.h>\n#include <zephyr/kernel.h>\n#include <zmk/endpoints.h>')
+edit("app/src/motion.c", 'if (live_sample_count >= LIVE_SAMPLES_PER_PUSH)', 'if (live_sample_count >= (zmk_endpoints_selected().transport == ZMK_TRANSPORT_USB ? 2 : 5))')
+
 # Animate only on the existing low-priority light queue. User settings remain
 # unchanged; power is removed only after the final black frame.
 edit("app/src/rgb_underglow.c", 'static void zmk_rgb_underglow_tick(struct k_work *work) {', '''static uint8_t fade_level;

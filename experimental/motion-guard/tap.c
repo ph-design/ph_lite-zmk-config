@@ -7,6 +7,7 @@
 #include <zmk/tap.h>
 #include <zmk/motion_guard.h>
 #include <zmk/power.h>
+#include <zmk/imu_game.h>
 #include <zmk/keymap.h>
 #include <zmk/behavior.h>
 #include <zmk/virtual_key_position.h>
@@ -40,7 +41,7 @@ static const struct zmk_behavior_binding *binding(const struct zmk_motion_tap_co
     return side ? (dbl ? &c->right_double : &c->right_single) : (dbl ? &c->left_double : &c->left_single);
 }
 static bool eligible(const struct zmk_motion_tap_config *c, const struct zmk_tap_options *o) {
-    return c->enabled && !zmk_motion_guard_blocks_output() && !zmk_power_input_recent(o->quiet_ms) &&
+    return c->enabled && !zmk_imu_game_active() && !zmk_motion_guard_blocks_output() && !zmk_power_input_recent(o->quiet_ms) &&
         (!c->layer_mask || (zmk_keymap_layer_state() & c->layer_mask));
 }
 static void emit(enum tap_gesture gesture, unsigned side, const struct zmk_motion_tap_config *c,

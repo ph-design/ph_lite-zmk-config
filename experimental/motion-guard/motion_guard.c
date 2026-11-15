@@ -14,6 +14,7 @@
 #include <zmk/motion_guard.h>
 #include <zmk/power.h>
 #include <zmk/tap.h>
+#include <zmk/imu_game.h>
 #if IS_ENABLED(CONFIG_ZMK_2G4)
 #include <zmk/2g4.h>
 #endif
@@ -132,7 +133,7 @@ static void update_policy(void) {
     applied_revision = config_revision;
     k_spin_unlock(&config_lock, config_key);
     if (changed && mg_blocks(&guard)) { mg_lock(&guard, k_uptime_get()); }
-    bool enabled = atomic_get(&requested_enabled);
+    bool enabled = atomic_get(&requested_enabled) && !zmk_imu_game_active();
     mg_enable(&guard, enabled);
     struct sample_frame frame = read_frame();
     int64_t now = k_uptime_get();
@@ -239,7 +240,7 @@ static int guard_init(void) {
         if (rc) { LOG_WRN("100Hz ODR request failed: %d", rc); }
     } else { LOG_ERR("IMU unavailable; disable carry in Studio to recover input"); }
     atomic_set(&started, 1);
-    LOG_INF("EVO Motion Guard preview.9: coherent pose lock and raw landing window");
+    LOG_INF("EVO Motion Guard preview.10: coherent pose lock and raw landing window");
     k_work_schedule(&policy_work, K_NO_WAIT);
     return 0;
 }
