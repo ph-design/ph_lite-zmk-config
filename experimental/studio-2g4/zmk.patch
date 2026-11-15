@@ -255,3 +255,102 @@ index 4500d4f..e107eef 100644
      if (last_state_of_charge != state_of_charge.val1) {
          last_state_of_charge = state_of_charge.val1;
  
+diff --git a/app/src/studio/rpc.c b/app/src/studio/rpc.c
+--- a/app/src/studio/rpc.c
++++ b/app/src/studio/rpc.c
+@@ -131,7 +131,7 @@
+         uint32_t claim_len = ring_buf_put_claim(&rpc_tx_buf, &write_buf, count - written);
+ 
+         if (claim_len == 0) {
+-            continue;
++            return false;
+         }
+ 
+         int escapes_written = 0;
+@@ -176,40 +176,54 @@
+     return stream;
+ }
+ 
++static bool escaped_size(pb_ostream_t *stream, const uint8_t *buf, size_t count) {
++    size_t *size = stream->state;
++    for (size_t i=0; i<count; i++) {
++        *size += (buf[i]==FRAMING_SOF || buf[i]==FRAMING_EOF || buf[i]==FRAMING_ESC) ? 2 : 1;
++    }
++    return true;
++}
++
+ static int send_response(const zmk_studio_Response *resp) {
+-    k_mutex_lock(&rpc_transport_mutex, K_FOREVER);
+-
+-    if (!selected_transport) {
+-        goto exit;
+-    }
+-
+-    void *user_data = selected_transport->tx_user_data ? selected_transport->tx_user_data() : NULL;
+-
+-    pb_ostream_t stream = pb_ostream_for_tx_buf(user_data);
+-
+-    uint8_t framing_byte = FRAMING_SOF;
+-    ring_buf_put(&rpc_tx_buf, &framing_byte, 1);
+-
+-    selected_transport->tx_notify(&rpc_tx_buf, 1, false, user_data);
+-
+-    /* Now we are ready to encode the message! */
+-    bool status = pb_encode(&stream, &zmk_studio_Response_msg, resp);
+-
+-    if (!status) {
+-#if !IS_ENABLED(CONFIG_NANOPB_NO_ERRMSG)
+-        LOG_ERR("Failed to encode the message %s", stream.errmsg);
+-#endif // !IS_ENABLED(CONFIG_NANOPB_NO_ERRMSG)
+-        return -EINVAL;
+-    }
+-
+-    framing_byte = FRAMING_EOF;
+-    ring_buf_put(&rpc_tx_buf, &framing_byte, 1);
+-
+-    selected_transport->tx_notify(&rpc_tx_buf, 1, true, user_data);
+-
+-exit:
++    bool notification = resp->which_type == zmk_studio_Response_notification_tag;
++    int64_t deadline = k_uptime_get() + 500;
++    for (;;) {
++        if (k_mutex_lock(&rpc_transport_mutex, K_NO_WAIT)) {
++            if (notification || k_uptime_get() >= deadline) return -EAGAIN;
++            k_msleep(1); continue;
++        }
++        int rc = 0;
++        if (!selected_transport) { k_mutex_unlock(&rpc_transport_mutex); return -ENOTCONN; }
++        size_t size = 2;
++        pb_ostream_t sizing = {escaped_size, &size, SIZE_MAX, 0};
++        if (!pb_encode(&sizing, &zmk_studio_Response_msg, resp)) rc = -EINVAL;
++        else if (size > ring_buf_capacity_get(&rpc_tx_buf)) rc = -EMSGSIZE;
++        else if (size > ring_buf_space_get(&rpc_tx_buf) ||
++                 (notification && ring_buf_size_get(&rpc_tx_buf) > 128)) rc = -EAGAIN;
++        else {
++            void *data = selected_transport->tx_user_data ? selected_transport->tx_user_data() : NULL;
++            pb_ostream_t stream = pb_ostream_for_tx_buf(data);
++            uint8_t byte = FRAMING_SOF;
++            ring_buf_put(&rpc_tx_buf, &byte, 1);
++            bool ok = pb_encode(&stream, &zmk_studio_Response_msg, resp);
++            byte = FRAMING_EOF;
++            ring_buf_put(&rpc_tx_buf, &byte, 1);
++            selected_transport->tx_notify(&rpc_tx_buf, 1, true, data);
++            if (!ok) rc = -EINVAL;
++        }
++        k_mutex_unlock(&rpc_transport_mutex);
++        if (rc != -EAGAIN || notification || k_uptime_get() >= deadline) return rc;
++        k_msleep(1);
++    }
++}
++
++uint32_t zmk_rpc_radio_tx_read(uint8_t *data, uint32_t size) {
++    if (k_mutex_lock(&rpc_transport_mutex, K_NO_WAIT)) return 0;
++    uint32_t n = 0;
++    if (selected_transport && selected_transport->transport == ZMK_TRANSPORT_2G4)
++        n = ring_buf_get(&rpc_tx_buf, data, size);
+     k_mutex_unlock(&rpc_transport_mutex);
+-    return 0;
++    return n;
+ }
+ 
+ static void rpc_main(void) {

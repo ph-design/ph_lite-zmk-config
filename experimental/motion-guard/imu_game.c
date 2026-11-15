@@ -64,7 +64,7 @@ static void game_thread(void *a,void *b,void *c) {
         if(!zmk_imu_game_active() && !atomic_get(&viewing)){have=false;k_sleep(K_MSEC(50));continue;}
         struct imu_game_config cfg;uint32_t rev;
         k_spinlock_key_t key=k_spin_lock(&lock);cfg=config;rev=revision;k_spin_unlock(&lock,key);
-        struct imu_game_state next={.supported=supported()};struct sensor_value xyz[3];
+        struct imu_game_state next={.supported=supported(),.roll=state.roll,.pitch=state.pitch};struct sensor_value xyz[3];
         if(!zmk_motion_guard_read_accel(xyz)) {
             int32_t raw[3];float norm=0;
             for(unsigned i=0;i<3;i++){int64_t micro=(int64_t)xyz[i].val1*1000000+xyz[i].val2;raw[i]=micro*1000/9806650;norm+=(float)raw[i]*raw[i];}
@@ -90,5 +90,5 @@ K_THREAD_DEFINE(imu_game,2048,game_thread,NULL,NULL,NULL,9,0,0);
 struct game_blob {uint32_t version,source,range,deadzone,smoothing,flags;int32_t center_roll,center_pitch;};
 int zmk_imu_game_save(void){struct imu_game_config c;zmk_imu_game_get_config(&c);struct game_blob b={1,c.source,c.range,c.deadzone,c.smoothing,(c.invert?1:0)|(c.swap?2:0)|(c.flip<<2),c.center_roll,c.center_pitch};return settings_save_one("imu_game/v1",&b,sizeof(b));}
 int zmk_imu_game_reset(void){atomic_set(&lease,0);const struct imu_game_config c=IMU_GAME_DEFAULTS;zmk_imu_game_set_config(&c);int rc=settings_delete("imu_game/v1");return rc==-ENOENT?0:rc;}
-static int load(const char *name,size_t len,settings_read_cb read_cb,void *arg){struct game_blob b;if(strcmp(name,"v1"))return -ENOENT;if(len!=sizeof(b)||read_cb(arg,&b,sizeof(b))!=sizeof(b)||b.version!=1||b.flags>31)return -EINVAL;struct imu_game_config c={b.source,b.range,b.deadzone,b.smoothing,(b.flags&1)!=0,(b.flags&2)!=0,b.flags>>2,b.center_roll,b.center_pitch};return zmk_imu_game_set_config(&c);}
+static int load(const char *name,size_t len,settings_read_cb read_cb,void *arg){struct game_blob b;if(strcmp(name,"v1"))return -ENOENT;if(len!=sizeof(b)||read_cb(arg,&b,sizeof(b))!=sizeof(b)||b.version!=1||b.flags>31)return -EINVAL;struct imu_game_config c={b.source,b.range,b.deadzone,b.smoothing,(b.flags&1)!=0,(b.flags&2)!=0,b.flags>>2,b.center_roll,b.center_pitch};if(IMU_BOARD_FLIP && b.source==1 && b.range==45 && b.deadzone==2 && b.smoothing==60 && !b.flags && !b.center_roll && !b.center_pitch)c.flip=IMU_BOARD_FLIP;return zmk_imu_game_set_config(&c);}
 SETTINGS_STATIC_HANDLER_DEFINE(imu_game_settings,"imu_game",NULL,load,NULL,NULL);

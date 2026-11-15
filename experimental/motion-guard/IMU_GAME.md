@@ -1,4 +1,4 @@
-# 姿态与体感游戏 preview.10 / Hub 0.6.8
+# 姿态与体感游戏 preview.11 / Hub 0.6.8
 
 ## 功能与边界
 
@@ -20,7 +20,7 @@ ZMKs → 体感 → 姿态与体感：平放采样，再抬左沿，再先放平
 
 RPC Capabilities.imu_version字段12=1。Request17 get_imu_game_config(bool)，18 set_imu_game_config，19 set_imu_game_mode(bool)；Response17 config，18/19 acceptance。config字段依次为source、range_deg、deadzone_deg、smoothing_ms、invert、swap_xy、flip_mask、center_roll、center_pitch，后两项为有符号百分之一度。现有字段不变。参数保存在独立版本化 imu_game/v1，模式租约只在RAM。
 
-LiveState新增6..15：x/y/z mg，sample_time，tilt_valid，game_active，game_axis，roll_cdeg，pitch_cdeg，game_supported。体感页面订阅时约25Hz推送，页面离开关闭；无需每帧RPC查询。姿态滤波/角度计算在独立线程，未订阅且非游戏时暂停。沿用传感器缓存，不在按键路径读I2C。
+LiveState新增6..15：x/y/z mg，sample_time，tilt_valid，game_active，game_axis，roll_cdeg，pitch_cdeg，game_supported。体感页面订阅时 USB 约25Hz、2.4G约10Hz推送（拥塞时丢弃旧遥测），页面离开关闭；无需每帧RPC查询。姿态滤波/角度计算在独立线程，未订阅且非游戏时暂停。沿用传感器缓存，不在按键路径读I2C。
 
 加密无线体0xd1 + little-endian int16轴，沿用每peer加密/重放保护。轴发送与按键/心跳放在同一系统工作队列，单独使用本地报文，不为轴输出清空按键队列。USB轴发送忙时跳过并重试，不在键事件上增加姿态等待。共享总线/射频的真实延迟仍需测量，不能把主机测试视为游戏响应时间基准。
 
@@ -36,3 +36,5 @@ Hub不合并两把键盘的轴。使用最新值和独立更新时间，轴超�
 
 参考：ST DT0140 https://www.st.com/resource/en/design_tip/dt0140-tilt-computation-using-accelerometer-data-for-inclinometer-applications-stmicroelectronics.pdf
 USB HID Usage Tables https://usb.org/hid
+
+preview.11 的板级负 Z 默认映射、无线流控、USB 接管、BL 和灯光渐变见 [README.md](README.md#无线姿态与-usb-接管修复preview11)。

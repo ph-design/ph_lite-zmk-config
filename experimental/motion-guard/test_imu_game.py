@@ -15,6 +15,7 @@ with tempfile.TemporaryDirectory(prefix="imu-game-") as directory:
 #include <errno.h>
 #include <setjmp.h>
 #include <stdio.h>
+#include <stdlib.h>
 #define CONFIG_ZMK_USB 1
 #define CONFIG_ZMK_2G4 1
 #define IS_ENABLED(x) (x)
@@ -64,7 +65,7 @@ int main(void){
  assert(fabsf(imu_difference(-179,179)-2)<.01f);
  const struct imu_game_config defaults=IMU_GAME_DEFAULTS;assert(!zmk_imu_game_set_config(&defaults));
  struct imu_game_config bad=defaults;bad.range=2;assert(zmk_imu_game_set_config(&bad)==-EINVAL);bad=defaults;bad.deadzone=45;assert(zmk_imu_game_set_config(&bad)==-EINVAL);bad=defaults;bad.center_pitch=9001;assert(zmk_imu_game_set_config(&bad)==-EINVAL);
- flat();zmk_imu_game_view(true);run(2);assert(state.valid && !state.active && usb_count==0);
+ flat();zmk_imu_game_view(true);run(2);assert(state.valid && !state.active && usb_count==0 && abs(state.roll)<10 && abs(state.pitch)<10);
  tilt();assert(!zmk_imu_game_mode(true));run(5);assert(usb>32000 && activity>0 && saves==0);
  hook=stop_hook;run(7);hook=0;assert(!zmk_imu_game_active() && usb==0);
  assert(!zmk_imu_game_mode(true));run(160);assert(!zmk_imu_game_active() && usb==0); /* lease expires */
@@ -79,3 +80,10 @@ int main(void){
  (r/"test.c").write_text(source)
  subprocess.run(["gcc","-std=c11","-Wall","-Wextra","-Wno-unused-parameter","-Wno-unused-function","-fsanitize=address,undefined","-I",str(r),str(r/"test.c"),"-lm","-o",str(r/"test")],check=True)
  subprocess.run([str(r/"test")],check=True)
+
+ # Run the same actual controller with the EVO negative-Z installation.
+ source=source.replace('#define CONFIG_ZMK_USB 1','#define CONFIG_ZMK_USB 1\n#define CONFIG_ZMK_MOTION_IMU_FLIP_Z 1').replace('sample[2]=(struct sensor_value){9,806650}','sample[2]=(struct sensor_value){-9,-806650}').replace('sample[2]=(struct sensor_value){6,935720}','sample[2]=(struct sensor_value){-6,-935720}')
+ (r/"test.c").write_text(source)
+ subprocess.run(["gcc","-std=c11","-Wno-unused-parameter","-Wno-unused-function","-fsanitize=address,undefined","-I",str(r),str(r/"test.c"),"-lm","-o",str(r/"test")],check=True)
+ subprocess.run([str(r/"test")],check=True)
+ print("PASS: EVO negative-Z mounting maps flat to zero roll/pitch")

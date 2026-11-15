@@ -3,7 +3,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 struct imu_game_config { uint32_t source, range, deadzone, smoothing; bool invert, swap; uint32_t flip; int32_t center_roll, center_pitch; };
-#define IMU_GAME_DEFAULTS {1,45,2,60,false,false,0,0,0}
+#if defined(CONFIG_ZMK_MOTION_IMU_FLIP_Z) && CONFIG_ZMK_MOTION_IMU_FLIP_Z
+#define IMU_BOARD_FLIP 4
+#else
+#define IMU_BOARD_FLIP 0
+#endif
+#define IMU_GAME_DEFAULTS {1,45,2,60,false,false,IMU_BOARD_FLIP,0,0}
 struct imu_game_state { int32_t x,y,z,roll,pitch,axis; uint32_t time; bool valid, active, supported; };
 bool zmk_imu_game_active(void);
 void zmk_imu_game_view(bool enabled);

@@ -1,4 +1,4 @@
-# Motion Guard / keyboard power preview.9 · 拿起锁定
+# Motion Guard / keyboard power preview.11 · 拿起锁定
 
 This is an optional overlay after `../studio-2g4/`, not a replacement for the default keyboard build. It combines the tested preview.4 policy / encrypted telemetry with additive, validated settings. Preview.7 adds hardware-assisted tap detection, diagnostics and corrected LIS2DH sample conversion.
 
@@ -100,3 +100,14 @@ Validation: fresh source/SDK builds succeed for all three shields. Actual sensor
 ## 姿态与体感游戏（preview.10）
 
 新增可校准的姿态模型、实验单轴USB/2.4G控制器与3秒租约退出。协议、行为、测试和实机限制见 [IMU_GAME.md](IMU_GAME.md)。SC V2 / Multi V2 无IMU分支继续只提供电源管理。
+
+## 无线姿态与 USB 接管修复（preview.11）
+
+- 修复 Studio TX 满时的忙等和编码失败遗漏解锁：先计算完整转义帧长度、预留空间，再发布整帧。运动遥测从不等待传输锁，积压超过 128 字节即丢弃过期快照；RPC 应答最多等待 500 ms，所有出口均释放锁。解锁／设置通知转到独立线程，事件与按键队列不等待发送。
+- USB HID 就绪时，Studio 管理链路优先选择 USB，独立于手动选择的无线 HID 端点。无线线程所有发送缓冲读取均在同一传输锁下验证归属，USB 接管后不能清理／取走 USB 回复。
+- 姿态计算仍约 50 Hz；USB 遥测约 25 Hz，无线约 10 Hz，避免超过每片 12 字节的无线停止等待链路预算。前端在样本间平滑显示，过期仍保持最后有效姿态并保留轴回中保护，不延长失效窗口。
+- EVO 默认姿态映射遵循板级负 Z 安装，原始 X/Y/Z 保留。仅旧版完全默认的映射记录迁移为板级方向；自定义映射和中心不覆盖。无效样本保持上一有效角度、轴归零。
+- 新增受 Studio 解锁保护的 core.enter_bootloader（请求／应答字段 5），GetDeviceInfo.bootloader_version（字段 3）=1。只接受 USB 数据链路就绪，延后 300 ms 设置 UF2 标志并重启。无 IMU 的 SC V2 / Multi V2 同样支持。Hub 继续使用已有 AT+BL，无须为按钮更新 Hub。
+- RGB 开／关与定时熄灯增加约 180 ms 渐变。低优先级灯光队列逐帧缩放最终颜色（含覆盖层）；渐出结束后关闭外部供电。中途切换保留当前亮度，不改用户亮度或保存值。Multi V2 未配置灯带时无额外效果。
+
+验证：三款键盘全新构建；实际序列化器的满缓冲一万次通知、转义跨环、超时、编码失败释放锁、USB 接管／无线归属、USB BL 延迟与标志；实际 RGB 正反渐变和断电时序；正／负 Z 安装下的实际游戏控制器测试通过。既有驱动／拿起锁定／敲击／电源／无 IMU 回归保留。未刷写设备，实机无线连续输入、插线切换、UF2 枚举、长期稳定性和时延仍待用户测试。

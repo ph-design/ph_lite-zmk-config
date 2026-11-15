@@ -13,6 +13,8 @@ python3 "$assets/test_imu_game.py"
 python3 "$assets/test_tap_runtime.py"
 python3 "$assets/test_power_runtime.py"
 if [ "$#" -gt 0 ]; then
+    python3 "$assets/test_rpc_runtime.py" "$1"
+    python3 "$assets/test_fade_runtime.py" "$1"
     python3 "$assets/test_driver.py" "$1"
     python3 "$assets/test_reset.py" "$1"
     python3 "$assets/test_telemetry_sender.py" "$1"

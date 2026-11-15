@@ -69,9 +69,9 @@ static int rx_start(void){atomic_set(&studio_selected,1);return 0;}
 static int rx_stop(void){atomic_set(&studio_selected,0);return 0;}
 static void tx_notify(struct ring_buf *buf,size_t added,bool done,void *arg){}
 ZMK_RPC_TRANSPORT(radio,ZMK_TRANSPORT_2G4,rx_start,rx_stop,NULL,tx_notify);
-static struct ring_buf *input(void){return zmk_rpc_get_tx_buf();}
 static struct ring_buf *output(void){return zmk_rpc_get_rx_buf();}
 static bool can_receive(void){return atomic_get(&studio_selected);}
+extern uint32_t zmk_rpc_radio_tx_read(uint8_t *data,uint32_t size);
 static void received_bytes(void){zmk_rpc_rx_notify();}
 static void abort_rpc_stream(void) {
     // EOF terminates any partially decoded request; the next SOF starts a new one.
@@ -80,6 +80,13 @@ static void abort_rpc_stream(void) {
 }
 #endif
 
+static uint32_t read_input(uint8_t *data,uint32_t size) {
+#if IS_ENABLED(CONFIG_ZMK_2G4_DONGLE)
+    return ring_buf_get(input(),data,size);
+#else
+    return zmk_rpc_radio_tx_read(data,size);
+#endif
+}
 static void emit(uint8_t flags) {
     struct zmk_esb_payload p={.pipe=0,.noack=false};
     size_t n=sr_encode(&link,flags,p.data);
@@ -94,7 +101,7 @@ static void process(struct radio_message *m) {
     if((m->data[1]&SR_OPEN) && (!link.session || (int32_t)(session-link.session)>0)) {
         sr_reset(&link,session);active=true;synchronized=true;abort_rpc_stream();
         // Old responses belong to the previous serial connection.
-        uint8_t drop[32];while(ring_buf_get(input(),drop,sizeof(drop))){}
+        uint8_t drop[32];while(read_input(drop,sizeof(drop))){}
     }
 #endif
     if(!active || session!=link.session)return;
@@ -134,13 +141,13 @@ static void radio_main(void) {
         if(!zmk_2g4_is_ready() || !can_receive())active=false;
         if(active && k_uptime_get()-last_rx>3000){active=false;abort_rpc_stream();}
         // Keep RPC serialization from blocking endpoint changes after disconnect.
-        if(!active) {uint8_t drop[32];ring_buf_get(input(),drop,sizeof(drop));}
+        if(!active && can_receive()) {uint8_t drop[32];read_input(drop,sizeof(drop));}
 #endif
         struct radio_message message;
         while(k_msgq_get(&studio_packets,&message,K_NO_WAIT)==0)process(&message);
         if(active) {
             if(synchronized && !link.pending_len) {
-                link.pending_len=ring_buf_get(input(),link.pending,SR_DATA);
+                link.pending_len=read_input(link.pending,SR_DATA);
             }
             emit(synchronized?0:SR_OPEN);
         }
