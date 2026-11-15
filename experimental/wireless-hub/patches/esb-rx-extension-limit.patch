@@ -1,0 +1,14 @@
+--- a/subsys/esb/esb.c
++++ b/subsys/esb/esb.c
+@@ -3224,7 +3224,10 @@
+ 		/* MPSL and ESB timers are in different domain which results in drift.
+ 		 * Limit number of Timeslot extensions to limit drift accumulation.
+ 		 */
+-		const uint16_t max_extends = 2000;
++		/* Bound PRX drift before ending the slot. Long uninterrupted RX
++         * after BLE scan expiry reproduced a WAIT_MPSL assertion on nRF52840.
++         * Keep normal END/re-request handling and all state assertions. */
++        const uint16_t max_extends = 32;
+ 
+ 		ts_duration_params.extend_count++;
+ 		if (ts_duration_params.extend_count >= max_extends) {

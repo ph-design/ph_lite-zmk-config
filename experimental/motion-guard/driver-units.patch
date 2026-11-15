@@ -1,0 +1,77 @@
+--- a/app/module/drivers/sensor/lis2dh/lis2dh.c
++++ b/app/module/drivers/sensor/lis2dh/lis2dh.c
+@@ -15,8 +15,9 @@
+ 
+ LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
+ #include "lis2dh.h"
+-
+-#define ACCEL_SCALE(sensitivity) ((SENSOR_G * (sensitivity) >> 14) / 100)
++#include "lis2dh_decode.h"
++
++#define ACCEL_SCALE(sensitivity) (sensitivity)
+ 
+ /*
+  * Use values for low-power mode in DS "Mechanical (Sensor) characteristics",
+@@ -30,15 +31,14 @@
+ };
+ 
+ static void lis2dh_convert(int16_t raw_val, uint32_t scale, struct sensor_value *val) {
+-    int32_t converted_val;
+-
+-    /*
+-     * maximum converted value we can get is: max(raw_val) * max(scale)
+-     *	max(raw_val >> 4) = +/- 2^11
+-     *	max(scale) = 114921
+-     *	max(converted_val) = 235358208 which is less than 2^31
+-     */
+-    converted_val = (raw_val >> 4) * scale;
++#if defined(CONFIG_ZMK_LIS2DH_OPER_MODE_HIGH_RES)
++    const unsigned shift = 4;
++#elif defined(CONFIG_ZMK_LIS2DH_OPER_MODE_LOW_POWER)
++    const unsigned shift = 8;
++#else
++    const unsigned shift = 6;
++#endif
++    int64_t converted_val = lis2dh_decode_micro_ms2(raw_val, scale, shift);
+     val->val1 = converted_val / 1000000;
+     val->val2 = converted_val % 1000000;
+ }
+@@ -151,22 +151,20 @@
+ static int lis2dh_fetch_xyz(const struct device *dev, enum sensor_channel chan) {
+     struct lis2dh_data *lis2dh = dev->data;
+     int status = -ENODATA;
+-    size_t i;
++    uint8_t bytes[7];
+     /*
+      * since status and all accel data register addresses are consecutive,
+      * a burst read can be used to read all the samples
+      */
+-    status = lis2dh->hw_tf->read_data(dev, LIS2DH_REG_STATUS, lis2dh->sample.raw,
+-                                      sizeof(lis2dh->sample.raw));
++    status = lis2dh->hw_tf->read_data(dev, LIS2DH_REG_STATUS, bytes, sizeof(bytes));
+     if (status < 0) {
+         LOG_WRN("Could not read accel axis data");
+         return status;
+     }
+ 
+-    for (i = 0; i < (3 * sizeof(int16_t)); i += sizeof(int16_t)) {
+-        int16_t *sample = (int16_t *)&lis2dh->sample.raw[1 + i];
+-
+-        *sample = sys_le16_to_cpu(*sample);
++    lis2dh->sample.status = bytes[0];
++    for (unsigned i = 0; i < 3; i++) {
++        lis2dh->sample.xyz[i] = lis2dh_decode_axis(bytes + 1 + i * 2);
+     }
+ 
+     if (lis2dh->sample.status & LIS2DH_STATUS_DRDY_MASK) {
+--- a/app/module/drivers/sensor/lis2dh/lis2dh.h
++++ b/app/module/drivers/sensor/lis2dh/lis2dh.h
+@@ -263,7 +263,7 @@
+ 	const struct lis2dh_transfer_function *hw_tf;
+ 
+ 	union lis2dh_sample sample;
+-	/* current scaling factor, in micro m/s^2 / lsb */
++	/* nominal sensitivity in 0.01 mg / 8-bit digit; resolution applied at decode */
+ 	uint32_t scale;
+ 
+ #ifdef CONFIG_ZMK_LIS2DH_MEASURE_TEMPERATURE
