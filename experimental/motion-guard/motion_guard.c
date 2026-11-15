@@ -239,7 +239,7 @@ static int guard_init(void) {
         if (rc) { LOG_WRN("100Hz ODR request failed: %d", rc); }
     } else { LOG_ERR("IMU unavailable; disable carry in Studio to recover input"); }
     atomic_set(&started, 1);
-    LOG_INF("EVO Motion Guard preview.7: hardware tap modes and diagnostics");
+    LOG_INF("EVO Motion Guard preview.8: hardware double tap only");
     k_work_schedule(&policy_work, K_NO_WAIT);
     return 0;
 }

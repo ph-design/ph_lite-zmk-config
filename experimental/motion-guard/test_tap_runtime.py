@@ -81,17 +81,17 @@ static const struct device dev;
 static void reset(bool single,bool dbl){now=1000;invoked=0;blocked=typing=false;guard_gen++;current=(struct zmk_motion_tap_config){.enabled=true,.latency_ms=80,.window_ms=240,.left_single={single?"single":NULL},.left_double={dbl?"double":NULL}};options=(struct zmk_tap_options){7,120,false};atomic_set(&test_until,0);zmk_tap_rearm(&dev,&current);}
 static void pulse(uint8_t src,int64_t time){now=time;mock_src=src;zmk_tap_driver_gpio();zmk_tap_driver_irq(src);irq_handler(&dev,NULL);now+=12;raw_work_cb(NULL);}
 int main(void){
- reset(false,true);assert(!single_handler && double_handler && diagnostics.engine==2);pulse(0x60,1100);assert(invoked==1 && !strcmp(last_binding,"double"));
- reset(true,false);assert(single_handler && !double_handler);pulse(0x58,1100);assert(invoked==1);pulse(0x50,1120);assert(invoked==1); /* ringing */
- reset(true,true);assert(single_handler && !double_handler);pulse(0x58,1100);assert(invoked==0);pulse(0x50,1250);assert(invoked==1 && !strcmp(last_binding,"double"));now=1600;pending_work_cb(NULL);assert(invoked==1); /* opposite signs, same global gesture */
- reset(true,true);pulse(0x50,1100);now=1437;pending_work_cb(NULL);assert(invoked==1 && !strcmp(last_binding,"single"));
- reset(true,true);pulse(0x50,1100);blocked=true;guard_gen++;blocked=false;pulse(0x50,1250);assert(invoked==0);now=1600;pending_work_cb(NULL);assert(invoked==1 && !strcmp(last_binding,"single")); /* no pre-lock/post-lock pair */
- reset(true,true);pulse(0x50,1100);typing=true;pulse(0x50,1250);typing=false;now=2000;pending_work_cb(NULL);assert(invoked==0);
- reset(true,false);assert(!zmk_tap_set_test(true));assert(diagnostics.actions==0);now=60995;mock_src=0x54;irq_handler(&dev,NULL);now=61010;raw_work_cb(NULL);assert(invoked==0); /* test event crossing deadline cannot execute */
- test_expiry_cb(NULL);assert(!zmk_tap_test_active());pulse(0x54,62000);assert(invoked==1);
- reset(true,false);for(int i=0;i<9;i++){mock_src=0x50;irq_handler(&dev,NULL);}raw_work_cb(NULL);assert(invoked==0 && diagnostics.drops>0);
- reset(true,false);struct sensor_value xyz[3]={{0,0},{0,0},{9,806650}};for(int i=0;i<40;i++){now++;zmk_tap_sample(xyz);}zmk_tap_driver_irq(0x54);struct zmk_tap_capture cap;zmk_tap_get_capture(&cap);assert(cap.count==32 && cap.frames[6]==0xe8 && cap.frames[7]==3);
- puts("PASS: actual tap modes, global sign-independent arbitration, debounce, lock generations, typing gate, no-action test expiry, overflow rejection and bounded capture");return 0;
+ reset(true,true);assert(!single_handler && double_handler && diagnostics.engine==2);pulse(0x60,1100);assert(invoked==1 && !strcmp(last_binding,"double"));
+ reset(true,false);assert(!single_handler && double_handler);pulse(0x58,1100);pulse(0x50,1250);assert(invoked==0); /* saved single bindings inert */
+ reset(true,true);pulse(0x58,1100);pulse(0x50,1250);assert(invoked==0); /* no software pairing */
+ reset(false,true);pulse(0x60,1100);pulse(0x60,1120);assert(invoked==1); /* duplicate rejection */
+ reset(false,true);blocked=true;guard_gen++;pulse(0x60,1100);blocked=false;pulse(0x60,1250);assert(invoked==1);
+ reset(false,true);typing=true;pulse(0x60,1100);typing=false;assert(invoked==0);pulse(0x60,1500);assert(invoked==1);
+ reset(true,true);assert(!zmk_tap_set_test(true));assert(!single_handler && double_handler && diagnostics.engine==2);assert(diagnostics.actions==0);now=60995;mock_src=0x62;irq_handler(&dev,NULL);now=61010;raw_work_cb(NULL);assert(invoked==0); /* queued test event cannot execute after expiry */
+ test_expiry_cb(NULL);assert(!zmk_tap_test_active());pulse(0x62,62000);assert(invoked==1 && !strcmp(last_binding,"double"));
+ reset(false,true);for(int i=0;i<9;i++){mock_src=0x60;irq_handler(&dev,NULL);}raw_work_cb(NULL);assert(invoked==0 && diagnostics.drops>0);
+ reset(false,true);struct sensor_value xyz[3]={{0,0},{0,0},{9,806650}};for(int i=0;i<40;i++){now++;zmk_tap_sample(xyz);}zmk_tap_driver_irq(0x62);struct zmk_tap_capture cap;zmk_tap_get_capture(&cap);assert(cap.count==32 && cap.frames[6]==0xe8 && cap.frames[7]==3);
+ puts("PASS: hardware double-only including test mode, inert legacy singles, no software pairing, debounce, lock generations, typing gate, no-action test expiry, overflow rejection and bounded capture");return 0;
 }
 '''
     (root/'test.c').write_text(source)

@@ -1,4 +1,4 @@
-"""Apply preview.7 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
+"""Apply preview.8 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -27,7 +27,6 @@ copies = {
     "lis2dh_decode.h": root / "app/module/drivers/sensor/lis2dh/lis2dh_decode.h",
     "tap.c": root / "app/src/tap.c",
     "tap.h": root / "app/include/zmk/tap.h",
-    "tap_policy.h": root / "app/src/tap_policy.h",
     "power.c": root / "app/src/power.c",
     "power_policy.h": root / "app/src/power_policy.h",
     "power.h": root / "app/include/zmk/power.h",
@@ -62,4 +61,4 @@ else:
         # Normalize source newlines so Windows checkouts work with Linux toolchains.
         target.write_bytes((assets / name).read_text().encode())
     subprocess.run([sys.executable, str(assets / "apply_tap.py"), str(root)], check=True)
-    print("Applied EVO Motion Guard preview.7; reconfigure/rebuild protobuf and firmware.")
+    print("Applied EVO Motion Guard preview.8; reconfigure/rebuild protobuf and firmware.")

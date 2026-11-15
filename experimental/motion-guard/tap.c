@@ -11,7 +11,7 @@
 #include <zmk/behavior.h>
 #include <zmk/virtual_key_position.h>
 #include <zmk/events/position_state_changed.h>
-#include "tap_policy.h"
+enum tap_gesture { TAP_NONE, TAP_SINGLE, TAP_DOUBLE };
 
 static struct zmk_tap_options options = {7, 120, false};
 static struct k_spinlock lock;
@@ -20,16 +20,14 @@ static struct zmk_tap_capture captured;
 static uint8_t ring[32][8];
 static unsigned ring_next, ring_count;
 static atomic_t config_generation, test_until;
-static struct tap_policy policy;
-static uint32_t policy_generation, policy_guard_generation, pending_generation, pending_guard;
-static bool pending_test;
+static uint32_t last_generation, last_guard;
+static int64_t last_double;
+static bool have_double;
 static const struct device *sensor;
 struct tap_event { uint32_t config, guard; int64_t time; uint8_t src; bool dry; };
 K_MSGQ_DEFINE(tap_events, sizeof(struct tap_event), 8, 4);
 static void raw_work_cb(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(raw_work, raw_work_cb);
-static void pending_work_cb(struct k_work *work);
-static K_WORK_DELAYABLE_DEFINE(pending_work, pending_work_cb);
 static void test_expiry_cb(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(test_expiry, test_expiry_cb);
 
@@ -47,7 +45,7 @@ static bool eligible(const struct zmk_motion_tap_config *c, const struct zmk_tap
 }
 static void emit(enum tap_gesture gesture, unsigned side, const struct zmk_motion_tap_config *c,
                  const struct zmk_tap_options *o, uint32_t cg, uint32_t gg, bool dry) {
-    if (!gesture) return;
+    if (gesture != TAP_DOUBLE) return; /* Stored legacy single bindings never execute. */
     if (cg != (uint32_t)atomic_get(&config_generation) || gg != zmk_motion_guard_generation() || !eligible(c, o)) { suppressed(); return; }
     k_spinlock_key_t key = k_spin_lock(&lock);
     diagnostics.gestures++; diagnostics.gesture = gesture;
@@ -65,39 +63,22 @@ static void emit(enum tap_gesture gesture, unsigned side, const struct zmk_motio
     zmk_behavior_invoke_binding(b, event, false);
     key = k_spin_lock(&lock); diagnostics.actions++; k_spin_unlock(&lock, key);
 }
-static void pending_work_cb(struct k_work *work) {
-    ARG_UNUSED(work);
-    if (k_msgq_num_used_get(&tap_events)) { k_work_reschedule(&pending_work, K_MSEC(16)); return; }
-    struct zmk_motion_tap_config c; zmk_motion_get_tap_config(&c);
-    struct zmk_tap_options o; zmk_tap_get_options(&o);
-    unsigned side = policy.side;
-    enum tap_gesture g = tap_expire(&policy, k_uptime_get(), c.latency_ms + c.window_ms, bound(binding(&c, side, false)));
-    emit(g, side, &c, &o, pending_generation, pending_guard, pending_test);
-}
 static void raw_work_cb(struct k_work *work) {
     ARG_UNUSED(work);
     struct tap_event e;
     while (!k_msgq_get(&tap_events, &e, K_NO_WAIT)) {
         uint32_t generation = atomic_get(&config_generation);
-        if (policy_generation != generation || policy_guard_generation != zmk_motion_guard_generation()) { policy = (struct tap_policy){0}; policy_generation = generation; policy_guard_generation = zmk_motion_guard_generation(); }
         struct zmk_motion_tap_config c; zmk_motion_get_tap_config(&c);
         struct zmk_tap_options o; zmk_tap_get_options(&o);
-        if (e.config != generation || e.guard != zmk_motion_guard_generation() || !eligible(&c, &o)) { tap_cancel(&policy); suppressed(); continue; }
+        if (!(e.src & 0x20) || e.config != generation || e.guard != zmk_motion_guard_generation() || !eligible(&c, &o)) { suppressed(); continue; }
+        if (have_double && last_generation == generation && last_guard == e.guard && e.time - last_double < c.latency_ms) { suppressed(); continue; }
+        last_double = e.time; last_generation = generation; last_guard = e.guard; have_double = true;
         bool negative = (e.src & 8) != 0;
 #if IS_ENABLED(CONFIG_ZMK_MOTION_TAP_SIDE_INVERT)
         negative = !negative;
 #endif
         unsigned side = o.split && !negative ? 1 : 0;
-        unsigned old_side = policy.side;
-        enum tap_gesture expired = tap_expire(&policy, e.time, c.latency_ms + c.window_ms, bound(binding(&c, old_side, false)));
-        emit(expired, old_side, &c, &o, pending_generation, pending_guard, pending_test);
-        bool dry = e.dry || (policy.pending && pending_test);
-        enum tap_gesture g = tap_pulse(&policy, e.time, side, (e.src & 0x20) != 0,
-            bound(binding(&c, side, false)), bound(binding(&c, side, true)), c.latency_ms, c.window_ms);
-        pending_generation = generation; pending_guard = e.guard; pending_test = dry;
-        if (policy.pending) k_work_reschedule(&pending_work, K_MSEC(c.latency_ms + c.window_ms + 16));
-        else k_work_cancel_delayable(&pending_work);
-        emit(g, side, &c, &o, generation, e.guard, dry);
+        emit(TAP_DOUBLE, side, &c, &o, generation, e.guard, e.dry);
     }
 }
 static void irq_handler(const struct device *dev, const struct sensor_trigger *trigger) {
@@ -113,12 +94,11 @@ static void irq_handler(const struct device *dev, const struct sensor_trigger *t
 int zmk_tap_rearm(const struct device *imu, const struct zmk_motion_tap_config *c) {
     sensor = imu;
     atomic_inc(&config_generation);
-    k_msgq_purge(&tap_events); k_work_cancel_delayable(&pending_work);
+    k_msgq_purge(&tap_events);
     if (!c->enabled) { atomic_set(&test_until, 0); k_work_cancel_delayable(&test_expiry); }
     struct zmk_tap_options o; zmk_tap_get_options(&o);
-    bool any_single = bound(&c->left_single) || (o.split && bound(&c->right_single));
-    bool any_double = bound(&c->left_double) || (o.split && bound(&c->right_double));
-    bool hardware_double = any_double && !any_single && !zmk_tap_test_active();
+    /* Always use the chip double-click engine, including no-action tests. */
+    bool hardware_double = true;
     static const struct sensor_trigger single = {.type = SENSOR_TRIG_TAP, .chan = SENSOR_CHAN_ACCEL_XYZ};
     static const struct sensor_trigger dbl = {.type = SENSOR_TRIG_DOUBLE_TAP, .chan = SENSOR_CHAN_ACCEL_XYZ};
     int rc = sensor_trigger_set(imu, &single, c->enabled && !hardware_double ? irq_handler : NULL);

@@ -107,7 +107,7 @@ zmk_studio_Response get_capabilities(const zmk_studio_Request *req) {
     resp.threshold_max = 127;
     resp.guard_version = ready ? 1 : 0;
     resp.power_version = 1;
-    resp.tap_version = ready ? 1 : 0;
+    resp.tap_version = ready ? 2 : 0;
     resp.power_lights = (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? 1 : 0) | (IS_ENABLED(CONFIG_ZMK_BACKLIGHT) ? 2 : 0);
     resp.supports_still_wake = false;
     resp.supports_sleep_wake = false;
