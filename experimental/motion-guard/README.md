@@ -1,4 +1,4 @@
-# Motion Guard / keyboard power preview.11 · 拿起锁定
+# Motion Guard / keyboard power preview.12 · 拿起锁定
 
 This is an optional overlay after `../studio-2g4/`, not a replacement for the default keyboard build. It combines the tested preview.4 policy / encrypted telemetry with additive, validated settings. Preview.7 adds hardware-assisted tap detection, diagnostics and corrected LIS2DH sample conversion.
 
@@ -111,3 +111,13 @@ Validation: fresh source/SDK builds succeed for all three shields. Actual sensor
 - RGB 开／关与定时熄灯增加约 180 ms 渐变。低优先级灯光队列逐帧缩放最终颜色（含覆盖层）；渐出结束后关闭外部供电。中途切换保留当前亮度，不改用户亮度或保存值。Multi V2 未配置灯带时无额外效果。
 
 验证：三款键盘全新构建；实际序列化器的满缓冲一万次通知、转义跨环、超时、编码失败释放锁、USB 接管／无线归属、USB BL 延迟与标志；实际 RGB 正反渐变和断电时序；正／负 Z 安装下的实际游戏控制器测试通过。既有驱动／拿起锁定／敲击／电源／无 IMU 回归保留。未刷写设备，实机无线连续输入、插线切换、UF2 枚举、长期稳定性和时延仍待用户测试。
+
+## USB 大回复与回调背压（preview.12）
+
+用户确认直接 USB 启动 Studio 同样会在解锁后初始化失败，并非仅无线切换。发现旧 UART serial_cb 在 TX ring 非空时持续调用 uart_fifo_fill；当 CDC FIFO 满、返回0时，循环没有进展。固定 SDK 的 CDC 回调与 tx_work 均在 USB_WORK_Q，旧回调阻止同队列排空 FIFO。构建配置 CDC ring 为1024字节，USB工作队列优先级-1；较大的键位／布局应答会走此路径。
+
+当前每次回调只尝试发送至多64字节，严格按实际写入量推进 ring；写0或错误立即返回，交由CDC完成回调继续发送，空队列关闭TX通知。UART start/stop与回调共享短临界区，stop同时禁用RX/TX，迟到回调不读取已归属无线的缓冲。没有增加初始化超时或改变键盘扫描、防抖、加密和拿起锁定策略。请同时更新 studio-2g4/zmk.patch 与相关源码。
+
+新增 test_uart_runtime.py 执行真实 UART 回调：满FIFO立即返回、部分写入、负错误返回、3000字节应答逐字完整、停止后迟到回调不读取以及恢复发送。相同夹具在原版回调上复现无进展循环，消除了只测试抽象发送缓冲而遗漏实际CDC背压的缺口。三款键盘全新编译及既有回归通过；实机直接USB、无线转USB、BL磁盘及长期运行仍待用户测试，未自动刷写。
+
+配套 ZMKs 采用正面斜上方键帽模型；日常一键放平校准，连续约1秒、至少8个有效稳定样本后求均值并应用中心。大于35mg的轴向波动、不平放、无效样本、超过350ms的样本间隔会重置采样窗口；8秒未完成可重试。保留轴向映射，不自动写闪存。仅平放不能识别XY方向，完整轴向重识别仍在默认收起的高级区，通过平放／抬左沿／抬后沿引导与边缘高亮完成。显示角度和模型相对已校准平面归零；算法不增加航向测量。

@@ -1,4 +1,4 @@
-# 姿态与体感游戏 preview.11 / Hub 0.6.8
+# 姿态与体感游戏 preview.12 / Hub 0.6.8
 
 ## 功能与边界
 
@@ -38,3 +38,5 @@ Hub不合并两把键盘的轴。使用最新值和独立更新时间，轴超�
 USB HID Usage Tables https://usb.org/hid
 
 preview.11 的板级负 Z 默认映射、无线流控、USB 接管、BL 和灯光渐变见 [README.md](README.md#无线姿态与-usb-接管修复preview11)。
+
+preview.12 修复 USB CDC 满 FIFO 回调忙等，并更新放平校准及前上方模型，详见 README 当前版本说明。

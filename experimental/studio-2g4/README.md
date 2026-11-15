@@ -26,3 +26,5 @@
 ## 无线发送缓冲保护（preview.11 配套）
 
 当前核心补丁包含整帧转义长度预检、有界 RPC 等待和非阻塞遥测发送。无线线程通过 zmk_rpc_radio_tx_read 在传输锁下核对管理端点归属，防止 USB 接管后取走 USB 回复。请同时更新 zmk.patch 与 studio-radio.c；不能只复制其中一个文件。相邻 motion-guard preview.11 继续叠加 USB 管理优先、独立通知队列、USB BL 和灯光渐变。新组合生成的 RPC 运行时代码已与三款实际编译／测试代码逐字对比一致；旧版本源码／二进制仅作为回退。
+
+preview.12 继续修复 USB UART 回调：每次最多64字节，尊重0／部分／错误写入，等待 CDC 完成后继续；停止时禁用RX和TX，迟到回调不再读取无线缓冲。对应真实回调回归位于 ../motion-guard/test_uart_runtime.py。

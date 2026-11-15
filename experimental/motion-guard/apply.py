@@ -1,4 +1,4 @@
-"""Apply preview.11 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
+"""Apply preview.12 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -73,4 +73,4 @@ else:
     subprocess.run([sys.executable, str(assets / "apply_tap.py"), str(root)], check=True)
     subprocess.run([sys.executable, str(assets / "apply_game.py"), str(root)], check=True)
     subprocess.run([sys.executable, str(assets / "apply_runtime.py"), str(root), str(messages)], check=True)
-    print("Applied EVO Motion Guard preview.11; reconfigure/rebuild protobuf and firmware.")
+    print("Applied EVO Motion Guard preview.12; reconfigure/rebuild protobuf and firmware.")
