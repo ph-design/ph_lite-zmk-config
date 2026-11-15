@@ -36,6 +36,8 @@ struct mg_guard {
     bool enabled, valid, have_previous, flat;
     int32_t base[3], previous[3], candidate[3];
     int32_t window_min[3], window_max[3];
+    int32_t poses[3][3];
+    unsigned pose_count, pose_next;
     int64_t last_sample, entered, quiet_since, carry_since;
     uint32_t settle_ms;
     bool physical[MG_KEYS], blocked[MG_KEYS], sent[MG_KEYS];
@@ -100,6 +102,9 @@ static inline void mg_enable(struct mg_guard *g, bool enabled) {
         mg_lock(g, g->last_sample);
     } else { mg_ready(g); }
 }
+static inline int32_t mg_median(int32_t a, int32_t b, int32_t c) {
+    return a > b ? (b > c ? b : (a > c ? c : a)) : (a > c ? a : (b > c ? c : b));
+}
 static inline void mg_sample(struct mg_guard *g, int64_t now,
                              int32_t x, int32_t y, int32_t z) {
     int32_t a[3] = {x, y, z};
@@ -121,6 +126,19 @@ static inline void mg_sample(struct mg_guard *g, int64_t now,
     if (!g->enabled) { return; }
     if (!fresh && g->state != MG_CARRY) { mg_lock(g, now); }
 
+    /* Separate transient acceleration from pose evidence. Two coherent frames
+     * out of three reject an isolated impact without a typing-time exemption.
+     * Landing stability below deliberately continues to use unfiltered data. */
+    if (!fresh) { g->pose_count = g->pose_next = 0; }
+    for (unsigned i = 0; i < 3; i++) g->poses[g->pose_next][i] = a[i];
+    g->pose_next = (g->pose_next + 1) % 3;
+    if (g->pose_count < 3) g->pose_count++;
+    int32_t pose[3];
+    for (unsigned i = 0; i < 3; i++) pose[i] = g->pose_count == 3 ? mg_median(g->poses[0][i], g->poses[1][i], g->poses[2][i]) : a[i];
+    int64_t pose_norm = (int64_t)pose[0]*pose[0] + (int64_t)pose[1]*pose[1] + (int64_t)pose[2]*pose[2];
+    bool pose_flat = pose[2] >= 500 && ((int64_t)pose[0]*pose[0] + (int64_t)pose[1]*pose[1])*100 <= (int64_t)pose[2]*pose[2]*30;
+    departure = 0;
+    for (unsigned i = 0; i < 3; i++) departure = mg_max(departure, mg_abs(pose[i] - g->base[i]));
     bool quiet = fresh && resting && step <= 65;
     if (quiet && mg_blocks(g) && g->quiet_since >= 0) {
         for (unsigned i = 0; i < 3; i++) {
@@ -143,20 +161,20 @@ static inline void mg_sample(struct mg_guard *g, int64_t now,
         if (mg_blocks(g) && g->carry_since < 0) { g->carry_since = now; }
     }
 
-    /* A clear sideways/inverted pose is immediately locked. A short
-     * acceleration spike, including a strong keystroke, is not enough. */
-    bool sideways = z < -250 || (z < 800 && (mg_abs(x) >= 650 || mg_abs(y) >= 650));
+    /* Only coherent, gravity-sized pose evidence can take the fast lock path. */
+    bool sideways = pose_norm >= 700LL*700 && pose_norm <= 1300LL*1300 &&
+        (pose[2] < -250 || (pose[2] < 800 && (mg_abs(pose[0]) >= 650 || mg_abs(pose[1]) >= 650)));
     if (sideways) {
         mg_lock(g, now);
         return;
     }
     switch (g->state) {
     case MG_READY:
-        if (!g->flat || departure >= (int32_t)g->config.departure_mg) {
+        if (!pose_flat || departure >= (int32_t)g->config.departure_mg) {
             g->state = MG_VERIFY;
             g->entered = now;
             g->quiet_since = -1;
-            for (unsigned i = 0; i < 3; i++) { g->candidate[i] = a[i] - g->base[i]; }
+            for (unsigned i = 0; i < 3; i++) { g->candidate[i] = pose[i] - g->base[i]; }
         } else if (quiet) {
             for (unsigned i = 0; i < 3; i++) {
                 g->base[i] += (a[i] - g->base[i]) / 32;
@@ -164,17 +182,17 @@ static inline void mg_sample(struct mg_guard *g, int64_t now,
         }
         break;
     case MG_VERIFY:
-        if (g->flat && departure < (int32_t)g->config.departure_mg) {
+        if (pose_flat && departure < (int32_t)g->config.departure_mg) {
             mg_ready(g);
         } else {
             int64_t direction = 0;
             for (unsigned i = 0; i < 3; i++) {
-                direction += (int64_t)g->candidate[i] * (a[i] - g->base[i]);
+                direction += (int64_t)g->candidate[i] * (pose[i] - g->base[i]);
             }
             /* Alternating vibrations are not sustained departure. */
             if (direction <= 0) {
                 g->entered = now;
-                for (unsigned i = 0; i < 3; i++) { g->candidate[i] = a[i] - g->base[i]; }
+                for (unsigned i = 0; i < 3; i++) { g->candidate[i] = pose[i] - g->base[i]; }
             } else if (now - g->entered >= g->config.verify_ms) { mg_lock(g, now); }
         }
         break;

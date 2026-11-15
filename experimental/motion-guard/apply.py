@@ -1,4 +1,4 @@
-"""Apply preview.8 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
+"""Apply preview.9 to an isolated, pinned EVO + Studio-over-2.4G source tree."""
 from pathlib import Path
 import argparse
 import hashlib
@@ -26,6 +26,8 @@ for path, digest in expected.items():
 copies = {
     "lis2dh_decode.h": root / "app/module/drivers/sensor/lis2dh/lis2dh_decode.h",
     "tap.c": root / "app/src/tap.c",
+    "no_imu.c": root / "app/src/no_imu.c",
+    "power_subsystem.c": root / "app/src/studio/power_subsystem.c",
     "tap.h": root / "app/include/zmk/tap.h",
     "power.c": root / "app/src/power.c",
     "power_policy.h": root / "app/src/power_policy.h",
@@ -55,10 +57,13 @@ else:
     subprocess.run(["git", "-C", str(root), "apply", str(assets / "tap-driver.patch")], check=True)
     subprocess.run(["git", "-C", str(root), "apply", str(assets / "driver-units.patch")], check=True)
     cmake = root / "app/CMakeLists.txt"
-    cmake.write_bytes(cmake.read_text().replace("src/motion_guard.c", "src/motion_guard.c src/power.c src/tap.c").encode())
+    cmake.write_bytes(cmake.read_text().replace("src/motion_guard.c", "src/motion_guard.c src/tap.c").replace(
+        "target_sources_ifdef(CONFIG_ZMK_MOTION", "target_sources(app PRIVATE src/power.c)\nif(NOT CONFIG_ZMK_MOTION)\n  target_sources(app PRIVATE src/no_imu.c)\nendif()\ntarget_sources_ifdef(CONFIG_ZMK_MOTION", 1).encode())
+    studio_cmake = root / "app/src/studio/CMakeLists.txt"
+    studio_cmake.write_bytes((studio_cmake.read_text() + "\nif(NOT CONFIG_ZMK_MOTION)\n  target_sources(app PRIVATE power_subsystem.c)\nendif()\n").encode())
     for name, target in copies.items():
         target.parent.mkdir(parents=True, exist_ok=True)
         # Normalize source newlines so Windows checkouts work with Linux toolchains.
         target.write_bytes((assets / name).read_text().encode())
     subprocess.run([sys.executable, str(assets / "apply_tap.py"), str(root)], check=True)
-    print("Applied EVO Motion Guard preview.8; reconfigure/rebuild protobuf and firmware.")
+    print("Applied EVO Motion Guard preview.9; reconfigure/rebuild protobuf and firmware.")

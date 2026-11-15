@@ -1,4 +1,4 @@
-# EVO Motion Guard preview.8 · 拿起锁定
+# Motion Guard / keyboard power preview.9 · 拿起锁定
 
 This is an optional overlay after `../studio-2g4/`, not a replacement for the default keyboard build. It combines the tested preview.4 policy / encrypted telemetry with additive, validated settings. Preview.7 adds hardware-assisted tap detection, diagnostics and corrected LIS2DH sample conversion.
 
@@ -85,4 +85,14 @@ References: [LIS2DH12 datasheet](https://www.st.com/resource/en/datasheet/lis2dh
 
 Double-tap bindings, the relative threshold value, double-tap window and layer selection appear first. A battery-life notice explains the small additional sensor consumption. Advanced axes/direction/typing suppression/timing controls and hardware diagnostics are collapsed at the page bottom. Diagnostics mount and poll only while expanded; closing the section stops its own no-action test. Threshold units and defaults are unchanged. Version 1/legacy firmware shows an upgrade notice; applying a tap setting clears old single actions, with explicit Save required for persistence. New firmware ignores stored singles even before such a save.
 
-This revision intentionally does not change the guard's impact/orientation classifier. The reported hard-spacebar false lock remains a separate unresolved issue; increasing departure threshold alone does not affect the immediate sideways branch. Hardware behavior and battery draw need user verification.
+Preview.8 kept the original classifier; preview.9 below replaces its single-frame pose path. Hardware behavior and battery draw need user verification.
+
+## Sensorless boards and coherent pose policy (preview.9)
+
+Supported build matrix: PH60-SC_V2_EVO (IMU), PH60-SC_V2 and PH60-Multi_V2 (no IMU), all on ph_lite. Power management now builds independently of CONFIG_ZMK_MOTION. Sensorless builds use no_imu.c to pass position events directly, never start a sampler or startup lock, and report no motion capabilities. A separate secured power-only RPC implementation uses the existing motion wire subsystem for capabilities, get/set power, explicit save and reset. This keeps standby, independent lights and opt-in sleep configurable without inventing an IMU. No sensor handlers or chip driver references are linked on those boards. Studio hides Motion when all motion features are absent while keeping the Device power editor and save path.
+
+The guard now uses a three-frame per-axis median for pose/departure evidence, rejecting isolated 10 ms impulses that used to take the immediate sideways/inverted path. Fast pose locking additionally requires a gravity-sized vector (700..1300 mg). At the normal approximately 100 Hz policy cadence, a sustained sideways pose is confirmed after two changed samples (approximately 20 ms including initial sample latency). Ambiguous departure still uses the configurable confirmation interval, now with coherent pose data. Ordinary key dispatch is unchanged; typing and held keys do not disable lift detection. A single accelerometer cannot prove motion at the exact instant of pickup; coherent detection introduces this bounded sample-confirmation tradeoff. No guarantee of zero leakage before detection is claimed.
+
+Landing confirmation deliberately uses unfiltered raw per-axis stability over the complete 60/180 ms default window, so filtering cannot make a moving keyboard appear settled. Queuing, replay order, bag-held-key suppression, carry history, stale sensor lock and double-tap gates remain intact. Thresholds and saved settings are unchanged. Physical case impulses that last for several frames can still resemble actual movement and must be tested; this is an experimental mitigation, not measured proof of spacebar immunity.
+
+Validation: fresh source/SDK builds succeed for all three shields. Actual sensorless adapter tests cover immediate forwarding of 128 positions, no lock and unsupported sensor operations. The existing guard suite plus isolated sideways/inverted/overrange impulses, held-key pickup, stale history, 10000 bag cycles and 40000 vibration taps passes. Driver, tap, power, BL and encrypted telemetry regressions pass. No keyboard was flashed. Physical typing/pickup/bag behavior, power draw and persistence across a reboot remain user tests.
