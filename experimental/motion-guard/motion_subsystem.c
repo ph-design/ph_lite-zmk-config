@@ -15,6 +15,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/motion_guard.h>
 #include <zmk/power.h>
 #include <zmk/tap.h>
+#include <zmk/imu_game.h>
 #include "../guard.h"
 #include <zmk/studio/rpc.h>
 #include <zmk/events/motion_live_state_changed.h>
@@ -108,6 +109,7 @@ zmk_studio_Response get_capabilities(const zmk_studio_Request *req) {
     resp.guard_version = ready ? 1 : 0;
     resp.power_version = 1;
     resp.tap_version = ready ? 2 : 0;
+    resp.imu_version = ready ? 1 : 0;
     resp.power_lights = (IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW) ? 1 : 0) | (IS_ENABLED(CONFIG_ZMK_BACKLIGHT) ? 2 : 0);
     resp.supports_still_wake = false;
     resp.supports_sleep_wake = false;
@@ -248,6 +250,23 @@ zmk_studio_Response get_tap_capture(const zmk_studio_Request *req) {
     return MOTION_RESPONSE(tap_capture, out);
 }
 
+zmk_studio_Response get_imu_game_config(const zmk_studio_Request *req) {
+    struct imu_game_config c;zmk_imu_game_get_config(&c);
+    zmk_motion_ImuGameConfig out={c.source,c.range,c.deadzone,c.smoothing,c.invert,c.swap,c.flip,c.center_roll,c.center_pitch};
+    return MOTION_RESPONSE(imu_game_config,out);
+}
+zmk_studio_Response set_imu_game_config(const zmk_studio_Request *req) {
+    const zmk_motion_ImuGameConfig *in=&req->subsystem.motion.request_type.set_imu_game_config;
+    struct imu_game_config c={in->source,in->range_deg,in->deadzone_deg,in->smoothing_ms,in->invert,in->swap_xy,in->flip_mask,in->center_roll,in->center_pitch};
+    return MOTION_RESPONSE(set_imu_game_config,zmk_imu_game_set_config(&c)==0);
+}
+zmk_studio_Response set_imu_game_mode(const zmk_studio_Request *req) {
+    return MOTION_RESPONSE(set_imu_game_mode,zmk_imu_game_mode(req->subsystem.motion.request_type.set_imu_game_mode)==0);
+}
+ZMK_RPC_SUBSYSTEM_HANDLER(motion,get_imu_game_config,ZMK_STUDIO_RPC_HANDLER_SECURED);
+ZMK_RPC_SUBSYSTEM_HANDLER(motion,set_imu_game_config,ZMK_STUDIO_RPC_HANDLER_SECURED);
+ZMK_RPC_SUBSYSTEM_HANDLER(motion,set_imu_game_mode,ZMK_STUDIO_RPC_HANDLER_SECURED);
+
 zmk_studio_Response get_power_config(const zmk_studio_Request *req) {
     struct zmk_power_config c; zmk_power_get_config(&c);
     zmk_motion_PowerConfig out = {.idle_timeout_ms = c.idle_timeout_ms, .rgb_off_ms = c.rgb_off_ms,
@@ -263,7 +282,7 @@ zmk_studio_Response set_power_config(const zmk_studio_Request *req) {
 }
 
 zmk_studio_Response save_state(const zmk_studio_Request *req) {
-    return MOTION_RESPONSE(save_state, zmk_motion_save_state() == 0 && zmk_motion_guard_save_config() == 0 && zmk_power_save_config() == 0 && zmk_tap_save_options() == 0);
+    return MOTION_RESPONSE(save_state, zmk_motion_save_state() == 0 && zmk_motion_guard_save_config() == 0 && zmk_power_save_config() == 0 && zmk_tap_save_options() == 0 && zmk_imu_game_save() == 0);
 }
 
 zmk_studio_Response set_live_stream(const zmk_studio_Request *req) {
@@ -295,7 +314,8 @@ static int motion_reset_all(void) {
     int guard_rc = zmk_motion_guard_reset_config();
     int power_rc = zmk_power_reset_config();
     int tap_rc = zmk_tap_reset();
-    return rc ? rc : guard_rc ? guard_rc : power_rc ? power_rc : tap_rc;
+    int game_rc = zmk_imu_game_reset();
+    return rc ? rc : guard_rc ? guard_rc : power_rc ? power_rc : tap_rc ? tap_rc : game_rc;
 }
 ZMK_RPC_SUBSYSTEM_SETTINGS_RESET(motion, motion_reset_all);
 
@@ -305,8 +325,12 @@ static int event_mapper(const zmk_event_t *eh, zmk_studio_Notification *n) {
         return -ENOTSUP;
     }
 
+    struct imu_game_state game;zmk_imu_game_state(&game);
     *n = MOTION_NOTIFICATION(live_state, ((zmk_motion_LiveState){
                                              .magnitude = ev->state.magnitude,
+                                             .x_mg=game.x,.y_mg=game.y,.z_mg=game.z,.sample_time=game.time,
+                                             .tilt_valid=game.valid,.game_active=game.active,.game_axis=game.axis,
+                                             .roll_cdeg=game.roll,.pitch_cdeg=game.pitch,.game_supported=game.supported,
                                              .orientation = ev->state.orientation,
                                              .carry_active = ev->state.carry_active,
                                              .tap_detected = ev->state.tap_detected,

@@ -1,4 +1,4 @@
-# Dual-keyboard ESB / BLE HID Hub 0.6.7
+# Dual-keyboard ESB / BLE HID Hub 0.6.8
 
 Standalone NCS application for Pro Micro / SuperMini nRF52840 with a compatible nice!nano UF2 bootloader. Two independently paired EVO keyboards share one RF channel; a BLE HID mouse connects through MPSL radio timeslots. This is a prototype, not a Bluetooth HCI adapter.
 
@@ -92,3 +92,11 @@ cc -std=c11 -Wall -Wextra -Werror -Isrc tests/test-led-motion.c -o /tmp/test-led
 ```
 
 `AT+BL` makes the USB-attached receiver enumerate its bootloader disk. It does not expose a battery-powered keyboard as a USB drive across the radio connection.
+
+## IMU axis controllers (0.6.8)
+
+EVO preview.10 can send authenticated 0xd1 + little-endian signed16 axis reports. USB exposes independent joystick application collections (report IDs4/5) for the two peers. No summing, last-writer ownership or cross-peer overwrite. Each peer centers after 250ms without axis updates; disconnect/new session releases it. The actual USB loop still evaluates this timeout under continuous keyboard traffic. A reconnect forces current/neutral output. Unchanged axes use reduced heartbeat output; normal key/consumer/mouse layouts stay unchanged.
+
+Run `python3 tests/test-axis.py` for actual descriptor sizes, output-loop isolation and timeout tests. Build with the pinned NCS toolchain as above. This is generic HID joystick support, not XInput; actual enumeration/game/RF/latency remains untested. Mode activation and the keyboard's3-second lease are described in `../motion-guard/IMU_GAME.md`. Upgrade/replug Hub before enabling the keyboard game mode. This source update was built, not flashed.
+
+Host sanitizer checks also exposed signed-byte shift undefined behavior in the existing vendored AES key expansion. Explicit uint32_t casts preserve the intended bit pattern. The AES-128 known-answer vector and peer crypto/replay tests pass with address/undefined sanitizers and non-recovering errors. Vendor license notices are retained.

@@ -9,3 +9,5 @@ void hub_mouse_release(unsigned source);
 void hub_radio_run(void);
 int hub_radio_pause(bool pause);
 extern int hub_radio_error;
+
+void hub_axis_event(unsigned slot,int16_t axis);

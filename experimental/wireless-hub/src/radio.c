@@ -94,6 +94,7 @@ int zmk_2g4_dongle_start(void){return hub_radio_reconfigure();}
 static void send_keyboard(void){uint8_t out[15];merge_keyboard(&input,out);hub_usb_report(1,out,15);}
 static void send_consumer(void){uint8_t out[24];merge_consumer(&input,out);hub_usb_report(2,out,24);}
 static void release(unsigned slot) {
+    hub_axis_event(slot,0);
     atomic_clear(&status[slot].connected);atomic_set(&status[slot].battery,-1);
     atomic_set(&status[slot].motion,MOTION_UNKNOWN);
     memset(input.keyboard[slot],0,15);memset(input.consumer[slot],0,12);
@@ -106,7 +107,8 @@ static void packet(struct esb_payload *p) {
     if(n<1){if(n!=-EACCES)atomic_inc(&s->fail);return;}
     atomic_set(&s->connected,1);atomic_set(&s->last_packet,k_uptime_get_32());
     switch(p->data[0]) {
-    case 0x05:atomic_set(&s->motion,MOTION_UNKNOWN);break;
+    case 0xd1:if(n==3)hub_axis_event(slot,(int16_t)sys_get_le16(p->data+1));break;
+    case 0x05:hub_axis_event(slot,0);atomic_set(&s->motion,MOTION_UNKNOWN);break;
     case 0x40:studio_radio_received_from(slot,p->data,n);break;
     case 1:if(n==16){memcpy(input.keyboard[slot],p->data+1,15);send_keyboard();}break;
     case 2:if(n==13){memcpy(input.consumer[slot],p->data+1,12);send_consumer();}break;

@@ -96,3 +96,7 @@ The guard now uses a three-frame per-axis median for pose/departure evidence, re
 Landing confirmation deliberately uses unfiltered raw per-axis stability over the complete 60/180 ms default window, so filtering cannot make a moving keyboard appear settled. Queuing, replay order, bag-held-key suppression, carry history, stale sensor lock and double-tap gates remain intact. Thresholds and saved settings are unchanged. Physical case impulses that last for several frames can still resemble actual movement and must be tested; this is an experimental mitigation, not measured proof of spacebar immunity.
 
 Validation: fresh source/SDK builds succeed for all three shields. Actual sensorless adapter tests cover immediate forwarding of 128 positions, no lock and unsupported sensor operations. The existing guard suite plus isolated sideways/inverted/overrange impulses, held-key pickup, stale history, 10000 bag cycles and 40000 vibration taps passes. Driver, tap, power, BL and encrypted telemetry regressions pass. No keyboard was flashed. Physical typing/pickup/bag behavior, power draw and persistence across a reboot remain user tests.
+
+## 姿态与体感游戏（preview.10）
+
+新增可校准的姿态模型、实验单轴USB/2.4G控制器与3秒租约退出。协议、行为、测试和实机限制见 [IMU_GAME.md](IMU_GAME.md)。SC V2 / Multi V2 无IMU分支继续只提供电源管理。
