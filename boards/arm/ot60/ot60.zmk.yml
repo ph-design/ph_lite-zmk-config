@@ -1,0 +1,13 @@
+file_format: "1"
+id: ot60
+name: OT60
+type: board
+arch: arm
+url: https://github.com/ph-design/ot60
+outputs:
+  - usb
+  - ble
+features:
+  - keys
+  - underglow
+  - studio

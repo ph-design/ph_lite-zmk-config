@@ -62,6 +62,16 @@ include:
 #    artifact-name: PH-Dongle
 
 
+  - board: ot60
+    snippet: studio-rpc-usb-uart
+    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=y
+    artifact-name: OT60_Release
+
+  - board: ot60
+    snippet: studio-rpc-usb-uart
+    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_STUDIO_LOCKING=n
+    artifact-name: OT60_Release_unsafe
+
   - board: ph_lite
     shield: settings_reset
     artifact-name: Settings-Reset-all

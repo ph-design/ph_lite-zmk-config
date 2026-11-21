@@ -1,0 +1,118 @@
+# Copyright (c) 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  DRV2605 Haptic Driver for ERM and LRA with built-in library and smart-loop
+  architecture.
+
+compatible: "ti,drv2605"
+
+include: i2c-device.yaml
+
+properties:
+  actuator-mode:
+    required: true
+    type: string
+    enum:
+      - "ERM"
+      - "LRA"
+  feedback-brake-factor:
+    type: string
+    enum:
+      - "1X"
+      - "2X"
+      - "3X"
+      - "4X"
+      - "6X"
+      - "8X"
+      - "16X"
+      - "DISABLED"
+    default: "3X"
+    description: |
+      Selects the feedback gain ratio between braking gain and driving gain.
+      According to the datasheet, a value of 2 ("3X") is valid for most
+      actuators.
+  loop-gain:
+    type: string
+    enum:
+      - "LOW"
+      - "MEDIUM"
+      - "HIGH"
+      - "VERY_HIGH"
+    default: "HIGH"
+    description: |
+      Selects a loop gain for the feedback control. According to the datasheet,
+      a value of 2 ("HIGH") is valid for most actuators.
+  vib-rated-mv:
+    type: int
+    default: 3200
+    description: |
+      Sets the reference voltage for full-scale output during closed-loop
+      operation. The default value is inherited from ti,drv260x.yaml in Linux.
+  vib-overdrive-mv:
+    type: int
+    default: 3200
+    description: |
+      Sets a clamp so that the automatic overdrive is bounded. The default
+      value is inherited from ti,drv260x.yaml in Linux.
+  vib-frequency-hz:
+    type: int
+    default: 0
+    description: |
+      LRA resonant frequency in Hz (0 = unknown). Used for the DRIVE_TIME
+      initial guess (half period), the LRA open-loop period (register 0x20)
+      and the rated/clamp voltage equations (datasheet 8.5.2, Eq 5/7).
+  lra-open-loop:
+    type: boolean
+    description: |
+      Drive the LRA in open loop at OL_LRA_PERIOD (derived from
+      vib-frequency-hz). Default is closed-loop auto-resonance, which is what
+      the LRA ROM library is tuned for. Requires vib-frequency-hz.
+  erm-open-loop:
+    type: boolean
+    description: |
+      Drive the ERM in open loop (fixed drive, no automatic overdrive/braking).
+      The datasheet recommends open loop for ERM with ROM library A (fixed
+      overdrive). Default is closed loop (differs from the chip reset value).
+  auto-cal-time:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    default: 2
+    description: |
+      Auto-calibration duration (CONTROL4.AUTO_CAL_TIME): 0=150-350ms,
+      1=250-450ms, 2=500-700ms (chip default), 3=1000-1200ms. Must be long
+      enough for the actuator to reach steady acceleration.
+  drive-time:
+    type: int
+    default: 0
+    description: |
+      Raw CONTROL1.DRIVE_TIME[4:0] (LRA: n*0.1ms+0.5ms, ERM: n*0.2ms+1ms).
+      0 = auto: derived from vib-frequency-hz (LRA half period), or the chip
+      default 0x13 when the frequency is unknown.
+  lra-blanking-time:
+    type: int
+    default: 1
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      Raw LRA BLANKING_TIME[3:0]: 0=15us, 1=25us, 2=50us, 3=75us,
+      4=90us, 5=105us, 6=120us, 7=135us, 8=150us, 9=165us,
+      10=180us, 11=195us, 12=210us, 13=235us, 14=260us, 15=285us.
+  lra-idiss-time:
+    type: int
+    default: 1
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      Raw LRA IDISS_TIME[3:0], using the same timing table as
+      lra-blanking-time. Default 1 preserves the chip's 25us reset value.
+  en-gpios:
+    type: phandle-array
+    description: GPIO to enable and disable the device.
+  in-trig-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the IN/TRIG pin (external trigger output, or test
+      source for PWM input mode).

@@ -1,0 +1,27 @@
+# haptics 子系统 + TI DRV2605 驱动（从 Zephyr 4.1 移植到 3.5）
+# SPDX-License-Identifier: Apache-2.0
+#
+# 3.5 树里既没有 drivers/haptics/ 也没有 HAPTICS 符号，所以不会和上游冲突。
+
+menuconfig HAPTICS
+	bool "Haptic feedback drivers"
+	help
+	  Enable haptics driver configuration.
+
+if HAPTICS
+
+module = HAPTICS
+module-str = haptics
+source "subsys/logging/Kconfig.template.log_config"
+
+config HAPTICS_INIT_PRIORITY
+	int "Haptic driver init priority"
+	default 90
+	help
+	  Haptic driver initialization priority.
+
+# 用 rsource（相对本文件所在目录）而不是 source：
+# source 只按 $srctree 解析，跨目录会找不到文件。
+rsource "drivers/haptics/Kconfig.drv2605"
+
+endif # HAPTICS

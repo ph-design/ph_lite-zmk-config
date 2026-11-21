@@ -1,0 +1,10 @@
+/* SPDX-License-Identifier: MIT */
+
+#ifndef OT60_HAPTICS_BINDINGS_H
+#define OT60_HAPTICS_BINDINGS_H
+
+#define OT60_LRA_LEFT 1
+#define OT60_LRA_RIGHT 2
+#define OT60_LRA_BOTH (OT60_LRA_LEFT | OT60_LRA_RIGHT)
+
+#endif

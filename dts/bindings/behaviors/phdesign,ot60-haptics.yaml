@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: MIT
+
+description: Play a short OT60 haptic click on the selected actuator(s).
+compatible: "phdesign,ot60-haptics"
+include: one_param.yaml

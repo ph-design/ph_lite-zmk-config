@@ -1,0 +1,80 @@
+/* SPDX-License-Identifier: MIT */
+
+&pinctrl {
+    ot60_i2c0_default: ot60_i2c0_default {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 1, 10) NRF_PSEL(TWIM_SCL, 1, 11)>;
+        };
+    };
+
+    ot60_i2c0_sleep: ot60_i2c0_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 1, 10) NRF_PSEL(TWIM_SCL, 1, 11)>;
+            low-power-enable;
+        };
+    };
+
+    ot60_i2c1_default: ot60_i2c1_default {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 1, 5) NRF_PSEL(TWIM_SCL, 1, 3)>;
+        };
+    };
+
+    ot60_i2c1_sleep: ot60_i2c1_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 1, 5) NRF_PSEL(TWIM_SCL, 1, 3)>;
+            low-power-enable;
+        };
+    };
+};
+
+&i2c0 {
+    compatible = "nordic,nrf-twim";
+    status = "okay";
+    clock-frequency = <100000>;
+    pinctrl-0 = <&ot60_i2c0_default>;
+    pinctrl-1 = <&ot60_i2c0_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    ot60_lra_left: haptic@5a {
+        compatible = "ti,drv2605";
+        reg = <0x5a>;
+        actuator-mode = "LRA";
+        /* OnePlus 0916 Turbo closed-loop bench profile. */
+        vib-frequency-hz = <125>;
+        vib-rated-mv = <1000>;
+        vib-overdrive-mv = <1800>;
+        lra-blanking-time = <5>;
+        lra-idiss-time = <5>;
+        auto-cal-time = <3>;
+    };
+
+    /* INT1 = P1.12, INT2 = P1.13. Requires a LIS2DE12 driver for this Zephyr tree. */
+    accelerometer@19 {
+        compatible = "st,lis2de12";
+        reg = <0x19>;
+        status = "disabled";
+    };
+};
+
+&i2c1 {
+    compatible = "nordic,nrf-twim";
+    status = "okay";
+    clock-frequency = <100000>;
+    pinctrl-0 = <&ot60_i2c1_default>;
+    pinctrl-1 = <&ot60_i2c1_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    ot60_lra_right: haptic@5a {
+        compatible = "ti,drv2605";
+        reg = <0x5a>;
+        actuator-mode = "LRA";
+        /* OnePlus 0916 Turbo closed-loop bench profile. */
+        vib-frequency-hz = <125>;
+        vib-rated-mv = <1000>;
+        vib-overdrive-mv = <1800>;
+        lra-blanking-time = <5>;
+        lra-idiss-time = <5>;
+        auto-cal-time = <3>;
+    };
+};

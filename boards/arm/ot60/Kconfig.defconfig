@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+
+if BOARD_OT60
+
+config BOARD
+    default "ot60"
+
+config ZMK_KEYBOARD_NAME
+    default "OT60"
+
+config BT_CTLR
+    default BT
+
+if USB_DEVICE_STACK
+
+config USB_NRFX
+    default y
+
+config USB_DEVICE_VID
+    default 0x5048
+
+config USB_DEVICE_PID
+    default 0xF003
+
+config USB_DEVICE_MANUFACTURER
+    default "Team PHDesign"
+
+endif # USB_DEVICE_STACK
+
+endif # BOARD_OT60

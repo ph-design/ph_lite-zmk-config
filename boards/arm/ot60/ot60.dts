@@ -1,0 +1,49 @@
+/* SPDX-License-Identifier: MIT */
+
+/dts-v1/;
+
+/* Share the PH Design nRF52840 USB and S140/UF2 partition definitions. */
+#include "../ph_lite/ph_lite.dtsi"
+#include "ot60-layouts.dtsi"
+#include "ot60-rgb.dtsi"
+#include "ot60-haptics.dtsi"
+
+/delete-node/ &kscan0;
+/delete-node/ &charge_state;
+
+&uicr {
+    gpio-as-nreset;
+};
+
+/ {
+    model = "OT60";
+    compatible = "phdesign,ot60";
+
+    chosen {
+        zmk,battery = &ot60_vddh;
+    };
+
+    ot60_vddh: battery {
+        compatible = "zmk,battery-nrf-vddh";
+    };
+
+    keys {
+        compatible = "gpio-keys";
+
+        ot60_wake_key: fn {
+            gpios = <&gpio0 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+        };
+    };
+
+    ot60_wake_scan: wake-scan {
+        compatible = "zmk,gpio-key-wakeup-trigger";
+        trigger = <&ot60_wake_key>;
+        wakeup-source;
+        extra-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+    };
+
+    soft-off-wakers {
+        compatible = "zmk,soft-off-wakeup-sources";
+        wakeup-sources = <&ot60_wake_scan>;
+    };
+};
