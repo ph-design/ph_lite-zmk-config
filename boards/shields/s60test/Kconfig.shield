@@ -1,5 +1,0 @@
-# Copyright (c) 2025 Team PHDesign
-# SPDX-License-Identifier: MIT
-
-config SHIELD_S60TEST
-	def_bool $(shields_list_contains,s60test)
