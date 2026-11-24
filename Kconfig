@@ -10,6 +10,11 @@ config PH_LITE_DONGLE_AT_BOOTLOADER
     depends on PH_LITE_DONGLE_AT_CMD
     depends on SOC_NRF52840
 
+config PH_LITE_RECEIVER
+    def_bool y
+    depends on BOARD_PH_LITE_RECEIVER && ZMK_2G4_DONGLE
+    select ZMK_2G4_DONGLE_EXTERNAL
+
 if BOARD_OT60
 rsource "modules/drv2605/Kconfig"
 endif
