@@ -58,6 +58,8 @@ include:
   - board: ph_lite_receiver
     artifact-name: PH-Dongle
 
+  - board: ph_lite_receiver
+    artifact-name: PH-Dongle_USB_Debug
 
   - board: ph_lite
     shield: settings_reset

@@ -1,3 +1,12 @@
 zephyr_library()
 zephyr_include_directories(${APPLICATION_SOURCE_DIR}/include)
 zephyr_library_sources_ifdef(CONFIG_PH_LITE_DONGLE_AT_CMD src/ph_lite_dongle_at.c)
+
+zephyr_library_sources_ifdef(CONFIG_PH_LITE_RECEIVER
+  src/receiver/dongle-led.c
+  src/receiver/radio.c
+  src/receiver/reports.c
+  src/receiver/serial.c)
+if(CONFIG_PH_LITE_RECEIVER)
+  zephyr_library_include_directories(${APPLICATION_SOURCE_DIR}/src/studio)
+endif()

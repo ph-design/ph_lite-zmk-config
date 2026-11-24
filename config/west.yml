@@ -5,14 +5,14 @@ manifest:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware/
     - name: phdesign
-      url-base: https://github.com/ph-design/
+      url-base: https://github.com/ph-design
     # Additional modules containing boards/shields/custom code can be listed here as well
     # See https://docs.zephyrproject.org/3.2.0/develop/west/manifest.html#projects
   projects:
-    - name: zmk
+    - name: zmks
       remote: phdesign
       revision: v0.3-lts
+      path: zmk
       import: app/west.yml
   self:
     path: config
-

@@ -16,7 +16,6 @@ config PH_LITE_RECEIVER
     select ZMK_2G4_DONGLE_EXTERNAL
 
 
-rsource "drivers/haptics/Kconfig"
 
 config OT60_HAPTICS
     bool "OT60 right-side keypress haptics"
