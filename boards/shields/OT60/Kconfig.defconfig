@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: MIT
+if SHIELD_OT60
+config ZMK_KEYBOARD_NAME
+    default "OT60"
+endif

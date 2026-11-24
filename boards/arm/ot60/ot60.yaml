@@ -1,0 +1,13 @@
+identifier: ot60
+name: OT60
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - usb_device
+  - ble
+  - watchdog

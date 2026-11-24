@@ -1,0 +1,109 @@
+/* Copyright (c) 2026 Team PHDesign
+ * SPDX-License-Identifier: MIT
+ */
+#include "OT60.dtsi"
+#include <dt-bindings/led/led.h>
+
+&pinctrl {
+    ot60_spi2_default: ot60_spi2_default {
+        group1 {
+            // WS2812 uses MOSI only. P1.03 is U7 SCL1 and must not be used as SCK.
+            psels = <NRF_PSEL(SPIM_MOSI, 1, 2) NRF_PSEL_DISCONNECTED(SPIM_SCK)>;
+        };
+    };
+    ot60_spi2_sleep: ot60_spi2_sleep {
+        group1 {
+            psels = <NRF_PSEL(SPIM_MOSI, 1, 2) NRF_PSEL_DISCONNECTED(SPIM_SCK)>;
+            low-power-enable;
+        };
+    };
+    ot60_i2c0_default: ot60_i2c0_default {
+        group1 { psels = <NRF_PSEL(TWIM_SDA, 1, 10) NRF_PSEL(TWIM_SCL, 1, 11)>; };
+    };
+    ot60_i2c0_sleep: ot60_i2c0_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 1, 10) NRF_PSEL(TWIM_SCL, 1, 11)>;
+            low-power-enable;
+        };
+    };
+    ot60_i2c1_default: ot60_i2c1_default {
+        group1 { psels = <NRF_PSEL(TWIM_SDA, 1, 5) NRF_PSEL(TWIM_SCL, 1, 3)>; };
+    };
+    ot60_i2c1_sleep: ot60_i2c1_sleep {
+        group1 {
+            psels = <NRF_PSEL(TWIM_SDA, 1, 5) NRF_PSEL(TWIM_SCL, 1, 3)>;
+            low-power-enable;
+        };
+    };
+};
+
+&i2c0 {
+    compatible = "nordic,nrf-twim";
+    status = "okay";
+    clock-frequency = <100000>;
+    pinctrl-0 = <&ot60_i2c0_default>;
+    pinctrl-1 = <&ot60_i2c0_sleep>;
+    pinctrl-names = "default", "sleep";
+    lis2dh: lis2dh@19 {
+        compatible = "zmk,lis2dh12", "zmk,lis2dh";
+        reg = <0x19>;
+        irq-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>, <&gpio1 13 GPIO_ACTIVE_HIGH>;
+        anym-mode = <1>;
+        anym-no-latch;
+    };
+    // U6 at 0x5A shares this bus but is deliberately not instantiated.
+};
+
+&i2c1 {
+    compatible = "nordic,nrf-twim";
+    status = "okay";
+    clock-frequency = <100000>;
+    pinctrl-0 = <&ot60_i2c1_default>;
+    pinctrl-1 = <&ot60_i2c1_sleep>;
+    pinctrl-names = "default", "sleep";
+    right_haptic: haptic@5a {
+        compatible = "ti,drv2605";
+        reg = <0x5a>;
+        // User confirmed: same OnePlus 12 CSA+ 0916 Turbo actuator as the reference project.
+        actuator-mode = "LRA";
+        loop-gain = "HIGH";
+        feedback-brake-factor = "3X";
+        vib-frequency-hz = <125>;
+        vib-rated-mv = <1000>;
+        vib-overdrive-mv = <1800>;
+        lra-blanking-time = <5>;
+        lra-idiss-time = <5>;
+        auto-cal-time = <3>;
+        // EN is hardwired to VDD, IN/TRIG to GND. Use I2C internal triggering only.
+    };
+};
+
+&spi2 {
+    compatible = "nordic,nrf-spim";
+    status = "okay";
+    pinctrl-0 = <&ot60_spi2_default>;
+    pinctrl-1 = <&ot60_spi2_sleep>;
+    pinctrl-names = "default", "sleep";
+    led_strip: ws2812@0 {
+        compatible = "worldsemi,ws2812-spi";
+        reg = <0>;
+        spi-max-frequency = <4000000>;
+        chain-length = <8>;
+        spi-one-frame = <0x70>;
+        spi-zero-frame = <0x40>;
+        color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE>;
+    };
+};
+/ {
+    chosen {
+        zmk,imu = &lis2dh;
+        zmk,underglow = &led_strip;
+        zmk,ext-power = &rgb_power;
+    };
+    rgb_power: ext-power {
+        compatible = "zmk,ext-power-generic";
+        status = "okay";
+        init-delay-ms = <50>;
+        control-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+    };
+};

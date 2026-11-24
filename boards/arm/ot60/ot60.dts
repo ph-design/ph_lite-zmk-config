@@ -1,0 +1,57 @@
+/* Copyright (c) 2026 Team PHDesign
+ * SPDX-License-Identifier: MIT
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/nrf-pinctrl.h>
+
+/ {
+    model = "OT60";
+    compatible = "phdesign,ot60";
+    chosen {
+        zephyr,code-partition = &code_partition;
+        zephyr,sram = &sram0;
+        zephyr,flash = &flash0;
+        zmk,kscan = &kscan0;
+        zmk,battery = &vddh;
+    };
+    kscan0: kscan { compatible = "zmk,kscan-gpio-dummy"; };
+
+    // U4 selects USB or battery into VDDH; this measures the battery only on battery power.
+    vddh: vddh { compatible = "zmk,battery-nrf-vddh"; };
+
+    // Match the existing PH-Lite Adafruit bootloader's retained DFU magic.
+    magic_mapper: magic_mapper {
+        compatible = "zmk,bootmode-to-magic-mapper";
+        status = "okay";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        boot_retention: retention@0 {
+            compatible = "zephyr,retention";
+            status = "okay";
+            reg = <0x0 0x1>;
+        };
+    };
+};
+
+&uicr { nfct-pins-as-gpios; };
+&adc { status = "okay"; };
+&gpiote { status = "okay"; };
+&gpio0 { status = "okay"; };
+&gpio1 { status = "okay"; };
+zephyr_udc0: &usbd { status = "okay"; };
+
+// Adafruit nRF52 / PH-Lite UF2 application layout. A bootloader is required.
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        sd_partition: partition@0 { reg = <0x00000000 0x00026000>; };
+        code_partition: partition@26000 { reg = <0x00026000 0x000c6000>; };
+        storage_partition: partition@ec000 { reg = <0x000ec000 0x00008000>; };
+        boot_partition: partition@f4000 { reg = <0x000f4000 0x0000c000>; };
+    };
+};

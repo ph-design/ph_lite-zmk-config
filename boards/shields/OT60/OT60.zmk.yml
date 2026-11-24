@@ -1,0 +1,7 @@
+file_format: "1"
+id: OT60
+name: OT60
+type: shield
+url: https://github.com/ph-design/ph_lite-zmk-config
+requires: [ot60]
+features: [keys, studio, underglow]
