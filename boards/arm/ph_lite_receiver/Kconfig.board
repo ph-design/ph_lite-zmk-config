@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: MIT
+
+config BOARD_PH_LITE_RECEIVER
+    bool "PH Lite Receiver"
+    depends on SOC_NRF52840_QIAA

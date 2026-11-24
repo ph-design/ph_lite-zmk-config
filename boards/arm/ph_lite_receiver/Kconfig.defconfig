@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+
+if BOARD_PH_LITE_RECEIVER
+
+config BOARD
+    default "ph_lite_receiver"
+
+endif
