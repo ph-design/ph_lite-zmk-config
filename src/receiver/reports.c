@@ -174,11 +174,13 @@ static void usb_output(void) {
 
         /* A successful USB transfer owns this buffer until completion. */
         memcpy(tx_buffers[next], report.data, report.len);
-        if (zmk_usb_hid_send_report(tx_buffers[next], report.len, report.connection_id)) {
+        int err = zmk_usb_hid_send_report(tx_buffers[next], report.len, report.connection_id);
+        if (err) {
 #if IS_ENABLED(CONFIG_ZMK_USB_LOGGING)
             atomic_inc(&usb_write_error);
 #endif
             atomic_set(&resync, 1);
+            k_msleep(1);
         } else {
 #if IS_ENABLED(CONFIG_ZMK_USB_LOGGING)
             atomic_inc(&usb_sent);
