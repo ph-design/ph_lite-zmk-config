@@ -496,7 +496,11 @@ static void studio_receive(const struct studio_packet *packet) {
 }
 
 static void serial_main(void) {
-    bool ready = !IS_ENABLED(CONFIG_ZMK_USB_LOGGING) && device_is_ready(serial_dev) &&
+    bool logging_on_serial = false;
+#if IS_ENABLED(CONFIG_ZMK_USB_LOGGING) && DT_HAS_CHOSEN(zephyr_console)
+    logging_on_serial = DT_SAME_NODE(DT_NODELABEL(cdc_acm_uart0), DT_CHOSEN(zephyr_console));
+#endif
+    bool ready = !logging_on_serial && device_is_ready(serial_dev) &&
                  !uart_irq_callback_user_data_set(serial_dev, serial_irq, NULL);
     bool was_open = false;
     struct indicator_ack ack = {0};
