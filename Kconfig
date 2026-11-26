@@ -1,15 +1,3 @@
-config PH_LITE_DONGLE_AT_CMD
-    bool "PH Lite dongle USB CDC AT command interface"
-    depends on ZMK_2G4_DONGLE
-    depends on USB_CDC_ACM
-    depends on SERIAL
-    depends on UART_INTERRUPT_DRIVEN
-
-config PH_LITE_DONGLE_AT_BOOTLOADER
-    bool "PH Lite dongle AT bootloader command"
-    depends on PH_LITE_DONGLE_AT_CMD
-    depends on SOC_NRF52840
-
 config PH_LITE_RECEIVER
     def_bool y
     depends on BOARD_PH_LITE_RECEIVER && ZMK_2G4_DONGLE
