@@ -257,13 +257,7 @@ static bool at_command(const char *command) {
         int err =
             !hub_management_ready() || studio_busy() ? -EBUSY : parse_pair(command + 8, key, &addr);
         if (!err) {
-            err = zmk_2g4_crypto_set_paired_key(key);
-        }
-        if (!err) {
-            err = zmk_2g4_addr_set_paired(&addr);
-            if (err) {
-                zmk_2g4_crypto_clear_paired_key();
-            }
+            err = zmk_2g4_set_pairing(key, &addr);
         }
         if (!err) {
             err = hub_radio_start();
@@ -274,12 +268,11 @@ static bool at_command(const char *command) {
         if (!hub_management_ready() || studio_busy()) {
             reply("\r\nERROR STUDIO_OPEN\r\n");
         } else {
-            int key_err = zmk_2g4_crypto_clear_paired_key();
-            int addr_err = zmk_2g4_addr_clear_paired();
-            int radio_err = hub_radio_start();
-            bool failed =
-                (key_err && key_err != -ENOENT) || (addr_err && addr_err != -ENOENT) || radio_err;
-            reply(failed ? "\r\nERROR CLEAR\r\n" : "\r\nOK\r\n");
+            int err = zmk_2g4_clear_pairing();
+            if (!err) {
+                err = hub_radio_start();
+            }
+            reply(err ? "\r\nERROR CLEAR\r\n" : "\r\nOK\r\n");
         }
     } else if (at_match(command, "AT+LED?")) {
         char status[160];

@@ -200,12 +200,11 @@ void hub_radio_status(char *out, size_t size) {
     enum motion_state state = online ? atomic_get(&motion) : MOTION_UNKNOWN;
     snprintk(out, size,
              "PAIR_STATE=%s\r\nLINK=%s\r\nRF_CH=%u\r\nKEY_ID=%08X\r\n"
-             "BATTERY_PCT=%d\r\nMOTION=%s\r\nRX=%ld\r\n"
-             "RX_AUTH_FAIL=%ld\r\nRX_QUEUE_DROP=%ld\r\n",
+             "ADDR_PAIRED=%d\r\nRF_ADDR=%02X%02X%02X%02X%02X\r\n"
+             "BATTERY_PCT=%d\r\nMOTION=%s\r\n",
              paired() ? "PAIRED" : "UNPAIRED", online ? "CONNECTED" : "LOST", addr.rf_channel,
-             zmk_2g4_crypto_key_id(), hub_keyboard_battery(), motion_names[state],
-             (long)atomic_get(&rx_count), (long)atomic_get(&rx_errors),
-             (long)atomic_get(&queue_drops));
+             zmk_2g4_crypto_key_id(), zmk_2g4_addr_is_paired(), addr.base[0], addr.base[1],
+             addr.base[2], addr.base[3], addr.prefix, hub_keyboard_battery(), motion_names[state]);
     size_t used = strlen(out);
     if (online && used < size) {
         snprintk(out + used, size - used, "RSSI_DBM=%ld\r\n", (long)atomic_get(&rssi));
