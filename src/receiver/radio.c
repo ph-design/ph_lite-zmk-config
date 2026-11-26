@@ -51,12 +51,17 @@ static void esb_event(const struct zmk_esb_event *event) {
         return;
     }
     struct zmk_esb_payload payload;
+    bool received = false;
     while (!zmk_esb_read_rx_payload(&payload)) {
+        received = true;
         atomic_inc(&rx_count);
         if (k_msgq_put(&radio_packets, &payload, K_NO_WAIT)) {
             atomic_inc(&queue_drops);
             atomic_set(&rx_overrun, 1);
         }
+    }
+    if (received) {
+        hub_serial_radio_activity();
     }
 }
 

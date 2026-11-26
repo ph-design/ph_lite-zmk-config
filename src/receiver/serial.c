@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(hub_serial);
 
 #define COMMAND_SIZE 96
 #define COMMAND_TIMEOUT_MS 100
+#define SERIAL_POLL_MS 20
+#define STUDIO_OPEN_WAIT_MS 1500
 
 static const struct device *const serial_dev = DEVICE_DT_GET(DT_NODELABEL(cdc_acm_uart0));
 
@@ -40,6 +42,7 @@ struct serial_frame {
 };
 
 static struct serial_frame rx_frame, tx_frame;
+static bool discard_rx_frame;
 static struct k_spinlock serial_lock;
 static bool serial_enabled;
 static char command[COMMAND_SIZE];
@@ -56,11 +59,15 @@ struct studio_packet {
 };
 
 K_MSGQ_DEFINE(studio_packets, sizeof(struct studio_packet), 8, 4);
+static K_SEM_DEFINE(serial_wake, 0, 1);
+static atomic_t ack_waiting;
+static int64_t ack_retry_at;
 
 static struct sr_link link;
 static bool studio_active;
 static bool studio_synced;
 static int64_t last_studio_rx;
+static int64_t studio_wait_until;
 static uint16_t connection_count;
 
 static void frame_update(struct serial_frame *frame, uint8_t byte) {
@@ -78,6 +85,7 @@ static void frame_update(struct serial_frame *frame, uint8_t byte) {
 static void serial_irq(const struct device *dev, void *user_data) {
     ARG_UNUSED(user_data);
 
+    bool moved = false;
     k_spinlock_key_t key = k_spin_lock(&serial_lock);
     if (!serial_enabled || !uart_irq_update(dev)) {
         k_spin_unlock(&serial_lock, key);
@@ -91,6 +99,7 @@ static void serial_irq(const struct device *dev, void *user_data) {
         while (ring_buf_space_get(&serial_rx) >= sizeof(data) &&
                (len = uart_fifo_read(dev, data, sizeof(data))) > 0) {
             ring_buf_put(&serial_rx, data, len);
+            moved = true;
         }
         if (ring_buf_space_get(&serial_rx) < sizeof(data)) {
             uart_irq_rx_disable(dev);
@@ -103,17 +112,27 @@ static void serial_irq(const struct device *dev, void *user_data) {
         int sent = len ? uart_fifo_fill(dev, data, len) : 0;
 
         ring_buf_get_finish(&serial_tx, sent > 0 ? MIN((uint32_t)sent, len) : 0);
+        moved |= sent > 0;
         if (sent <= 0 || ring_buf_is_empty(&serial_tx)) {
             uart_irq_tx_disable(dev);
         }
     }
     k_spin_unlock(&serial_lock, key);
+    if (moved) {
+        k_sem_give(&serial_wake);
+    }
 }
 
 static bool serial_is_open(void) {
     uint32_t dtr = 0;
 
     return !uart_line_ctrl_get(serial_dev, UART_LINE_CTRL_DTR, &dtr) && dtr;
+}
+
+static void reset_studio_input(void) {
+    ring_buf_reset(&studio_rx);
+    discard_rx_frame = rx_frame.active;
+    studio_wait_until = 0;
 }
 
 static void serial_reset(bool open) {
@@ -123,9 +142,10 @@ static void serial_reset(bool open) {
     uart_irq_rx_disable(serial_dev);
     uart_irq_tx_disable(serial_dev);
     ring_buf_reset(&serial_rx);
-    ring_buf_reset(&studio_rx);
+    reset_studio_input();
     ring_buf_reset(&serial_tx);
     rx_frame = (struct serial_frame){0};
+    discard_rx_frame = false;
     tx_frame = (struct serial_frame){0};
     memset(command, 0, sizeof(command));
     command_len = 0;
@@ -140,8 +160,16 @@ static void serial_reset(bool open) {
 }
 
 static void forward_byte(uint8_t byte) {
-    ring_buf_put(&studio_rx, &byte, 1);
+    if (discard_rx_frame && !rx_frame.escaped && byte == FRAMING_SOF) {
+        discard_rx_frame = false;
+    }
+    if (!discard_rx_frame) {
+        ring_buf_put(&studio_rx, &byte, 1);
+    }
     frame_update(&rx_frame, byte);
+    if (!rx_frame.active) {
+        discard_rx_frame = false;
+    }
     line_start = !rx_frame.active && (byte == '\r' || byte == '\n' || byte == FRAMING_EOF);
 }
 
@@ -260,6 +288,7 @@ static bool at_command(const char *command) {
             err = zmk_2g4_set_pairing(key, &addr);
         }
         if (!err) {
+            reset_studio_input();
             err = hub_radio_start();
         }
         memset(key, 0, sizeof(key));
@@ -270,6 +299,7 @@ static bool at_command(const char *command) {
         } else {
             int err = zmk_2g4_clear_pairing();
             if (!err) {
+                reset_studio_input();
                 err = hub_radio_start();
             }
             reply(err ? "\r\nERROR CLEAR\r\n" : "\r\nOK\r\n");
@@ -345,20 +375,33 @@ static void serial_poll(void) {
     }
 }
 
+void hub_serial_radio_activity(void) {
+    if (atomic_cas(&ack_waiting, 1, 0)) {
+        k_sem_give(&serial_wake);
+    }
+}
+
 void studio_radio_received(const uint8_t *data, size_t len) {
     if (!sr_valid(data, len)) {
         return;
     }
     struct studio_packet message = {.len = len};
     memcpy(message.data, data, len);
-    k_msgq_put(&studio_packets, &message, K_NO_WAIT);
+    if (!k_msgq_put(&studio_packets, &message, K_NO_WAIT)) {
+        k_sem_give(&serial_wake);
+    }
 }
 
 static void studio_stop(void) {
     studio_active = false;
     studio_synced = false;
-    ring_buf_reset(&studio_rx);
-    /* An abandoned response can no longer supply its frame terminator. */
+    reset_studio_input();
+    if (tx_frame.active) {
+        k_spinlock_key_t key = k_spin_lock(&serial_lock);
+        uart_irq_tx_disable(serial_dev);
+        ring_buf_reset(&serial_tx);
+        k_spin_unlock(&serial_lock, key);
+    }
     tx_frame = (struct serial_frame){0};
 }
 
@@ -374,10 +417,20 @@ static void studio_start(void) {
     last_studio_rx = k_uptime_get();
 }
 
+static int queue_ack(const uint8_t *data, size_t len) {
+    ack_retry_at = k_uptime_get() + SERIAL_POLL_MS;
+    atomic_set(&ack_waiting, 1);
+    int ret = hub_radio_ack(data, len);
+    if (ret && ret != -EBUSY && ret != -ENOMEM) {
+        atomic_clear(&ack_waiting);
+    }
+    return ret;
+}
+
 static void studio_ack(uint8_t flags) {
     uint8_t data[SR_HEADER + SR_DATA];
     size_t len = sr_encode(&link, flags, data);
-    hub_radio_ack(data, len);
+    queue_ack(data, len);
 }
 
 struct indicator_ack {
@@ -402,7 +455,7 @@ static bool queue_indicators(struct indicator_ack *ack) {
         return false;
     }
     const uint8_t data[] = {ZMK_2G4_ACK_LED_INDICATORS, value};
-    if (hub_radio_ack(data, sizeof(data))) {
+    if (queue_ack(data, sizeof(data))) {
         return false;
     }
     /* PRX has one ACK payload slot. Leave the indicator there for the next packet. */
@@ -463,17 +516,27 @@ static void serial_main(void) {
         if (studio_active && (!online || k_uptime_get() - last_studio_rx > 3000)) {
             studio_stop();
         }
+        if (studio_wait_until && k_uptime_get() >= studio_wait_until) {
+            reset_studio_input();
+        }
         if (open) {
             serial_poll();
         }
         if (!online) {
             ack = (struct indicator_ack){0};
-            ring_buf_reset(&studio_rx);
-            k_msleep(open ? 10 : 20);
+            if (!zmk_2g4_crypto_has_paired_key() || !zmk_2g4_addr_is_paired()) {
+                reset_studio_input();
+            } else if (!studio_wait_until && !ring_buf_is_empty(&studio_rx)) {
+                studio_wait_until = k_uptime_get() + STUDIO_OPEN_WAIT_MS;
+            }
+            atomic_clear(&ack_waiting);
+            k_sem_take(&serial_wake, K_MSEC(SERIAL_POLL_MS));
             continue;
         }
 
-        if (open && !studio_active && !ring_buf_is_empty(&studio_rx)) {
+        if (open && !studio_active && !ring_buf_is_empty(&studio_rx) &&
+            (!studio_wait_until || !rx_frame.active)) {
+            studio_wait_until = 0;
             studio_start();
         }
         struct studio_packet packet;
@@ -481,13 +544,24 @@ static void serial_main(void) {
             studio_receive(&packet);
         }
 
-        if (studio_active && studio_synced && !link.pending_len) {
+        if (studio_active && !link.pending_len) {
             link.pending_len = ring_buf_get(&studio_rx, link.pending, sizeof(link.pending));
         }
-        if (!queue_indicators(&ack) && studio_active) {
-            studio_ack(studio_synced ? 0 : SR_OPEN);
+        if (k_uptime_get() >= ack_retry_at) {
+            atomic_clear(&ack_waiting);
         }
-        k_msleep(studio_active ? 5 : 20);
+        if (!atomic_get(&ack_waiting)) {
+            if (studio_active && !studio_synced) {
+                studio_ack(SR_OPEN);
+            } else if (!queue_indicators(&ack) && studio_active) {
+                studio_ack(0);
+            }
+        }
+        int64_t wake_at = k_uptime_get() + SERIAL_POLL_MS;
+        if (atomic_get(&ack_waiting)) {
+            wake_at = MIN(wake_at, ack_retry_at);
+        }
+        k_sem_take(&serial_wake, K_TIMEOUT_ABS_MS(wake_at));
     }
 }
 

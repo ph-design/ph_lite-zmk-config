@@ -12,6 +12,7 @@ void hub_usb_log_status(void);
 #endif
 int hub_radio_start(void);
 void studio_radio_received(const uint8_t *data, size_t len);
+void hub_serial_radio_activity(void);
 bool hub_keyboard_connected(void);
 int hub_keyboard_battery(void);
 bool hub_keyboard_locked(void);
