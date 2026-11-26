@@ -140,7 +140,7 @@ int hub_radio_start(void) {
         err = zmk_esb_set_rf_channel(addr.rf_channel);
     }
     if (!err) {
-        err = zmk_esb_set_tx_power(4);
+        err = zmk_esb_set_tx_power(8);
     }
     if (!err) {
         err = zmk_esb_start_rx();
