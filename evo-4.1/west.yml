@@ -6,7 +6,7 @@ manifest:
     - name: zmk
       repo-path: zmks
       remote: ph-design
-      revision: 317be947bd37c84f02670e8a7d1a613ea281eb56
+      revision: 057566772edcce4873f668455a6d913e9545a232
       path: zmk
       import: app/west.yml
   self:
