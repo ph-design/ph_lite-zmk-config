@@ -25,4 +25,8 @@ endif # USB_DEVICE_STACK
 config BT_CTLR
     default BT
 
+# Zephyr 3.5 requires the WS2812 driver to be selected explicitly.
+config WS2812_STRIP
+    default y if SHIELD_PH60_SC_V2_EVO
+
 endif # BOARD_PH_LITE
