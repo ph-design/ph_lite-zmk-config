@@ -1,0 +1,3 @@
+/* The three transport keys on the Bluetooth layer of the radio variant. */
+#define EVO_OUTPUT_BINDINGS &out OUT_BLE &out OUT_2G4 &out OUT_USB
+#include "../../boards/shields/PH60-SC_V2_EVO/PH60-SC_V2_EVO.keymap"

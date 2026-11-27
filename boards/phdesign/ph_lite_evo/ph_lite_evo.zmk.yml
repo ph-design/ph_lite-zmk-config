@@ -1,0 +1,10 @@
+file_format: "1"
+id: ph_lite_evo
+name: PH-Lite (Evo)
+type: board
+arch: arm
+outputs:
+  - usb
+  - ble
+exposes: [ph_lite]
+url: https://github.com/ph-design/ph_lite-zmk-config

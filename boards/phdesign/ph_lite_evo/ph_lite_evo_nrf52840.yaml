@@ -1,0 +1,13 @@
+identifier: ph_lite_evo/nrf52840
+name: PH-Lite (Evo)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - usb_device
+  - ble
+  - watchdog
